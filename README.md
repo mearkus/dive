@@ -23,3 +23,18 @@ npm run dev     # 3D scene — scaffold only, see milestone M2
 
 `npm run play -- --players=3 --humans=1 --seed=7` — add `--humans=0` to watch
 bots play, `--bot=search` for the stronger opponent.
+
+## Deployment
+
+Pushes to `main` build and publish to GitHub Pages via
+`.github/workflows/deploy.yml`. You can also deploy any branch by hand from the
+Actions tab ("Deploy" → "Run workflow"), which is useful for previewing a
+milestone before it merges.
+
+**One-time setup:** in repo Settings → Pages, set *Build and deployment →
+Source* to **GitHub Actions**. Until that is set the workflow fails at the
+"Configure Pages" step.
+
+The deploy runs typecheck and the test suite first, so a broken build never
+reaches the site. Note that what deploys today is the M0 placeholder scene —
+the game itself is in the terminal until milestone M3.
