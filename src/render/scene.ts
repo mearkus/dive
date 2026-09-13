@@ -4,7 +4,7 @@ import { buildBoard, type BoardView } from './board.js';
 import { animateDiver, buildDiver, setDiverDimmed, type DiverView } from './divers.js';
 import { LEDGE_LEGAL, depthMix, LEDGE, ROCK } from './palette.js';
 import { costPlate, nameplate, treasurePlate } from './textures.js';
-import { LEDGE_DEPTH, SURFACE_Y, diverSlotX, ledgeY, trenchX } from './layout.js';
+import { LEDGE_DEPTH, LEDGE_DROP, LEDGE_WIDTH, SURFACE_Y, TRENCH_SPACING, diverSlotX, ledgeY, trenchX } from './layout.js';
 import { buildWater } from './water.js';
 import { Timeline } from './timeline.js';
 import type { Stage } from './stage.js';
@@ -58,7 +58,10 @@ export class GameScene {
     // Labels hold a near-constant screen size. Without this, fitting a wide
     // board onto a narrow phone shrinks every number into illegibility.
     const distance = this.stage.camera.position.distanceTo(this.stage.controls.target);
-    const wanted = Math.min(2.0, Math.max(0.85, distance / 38));
+    // Grow labels to hold their screen size, but never past the vertical room
+    // between two ledges — that is what made them collide in portrait.
+    const ceiling = (LEDGE_DROP - 0.2) / 1.34;
+    const wanted = Math.min(ceiling, Math.max(0.85, distance / 34));
     if (Math.abs(wanted - this.labelScale) > 0.02) {
       this.labelScale = wanted;
       this.applyLabelScale();
@@ -78,11 +81,23 @@ export class GameScene {
     const k = this.labelScale;
     for (const ledge of this.board.ledges) {
       const legal = this.legalKeys.has(`${ledge.trench}:${ledge.ledge}`);
-      ledge.plate.scale.set((legal ? 1.34 : 1.15) * k, (legal ? 1.34 : 1.15) * k, 1);
-      ledge.plate.position.x = -2.6 - 0.45 * k;
+      // Affordable and unaffordable plates are the same size — colour marks the
+      // difference, and shrinking the dark ones only made them harder to read.
+      const size = (legal ? 1.34 : 1.28) * k;
+      ledge.plate.scale.set(size, size, 1);
+      // Keep the plate inside its own ledge. Hanging it off the left edge let
+      // an enlarged plate spill into the neighbouring trench on narrow screens.
+      ledge.plate.position.x = -LEDGE_WIDTH / 2 + size / 2 + 0.12;
     }
-    for (const { sprite } of this.board.nameplates) sprite.scale.set(5.0 * k, 1.56 * k, 1);
-    for (const { sprite } of this.board.treasureLabels) sprite.scale.set(3.4 * k, 1.0 * k, 1);
+    // A nameplate may not grow into its neighbour, whatever the label scale.
+    const nameK = Math.min(k, (TRENCH_SPACING - 0.6) / 5.0);
+    for (const { sprite } of this.board.nameplates) sprite.scale.set(5.0 * nameK, 1.56 * nameK, 1);
+    // The hoard hangs below the wreck: above it, an enlarged plate collided
+    // with that ledge's own cost plate.
+    for (const { sprite } of this.board.treasureLabels) {
+      sprite.scale.set(3.4 * k, 1.0 * k, 1);
+      sprite.position.set(0.4, -1.5 - 0.6 * k, 1.4);
+    }
     for (const view of this.divers.values()) {
       const base = view.badge.userData.base ?? 0.5;
       view.badge.scale.set(base * k, base * k, 1);

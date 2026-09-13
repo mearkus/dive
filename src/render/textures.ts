@@ -1,4 +1,4 @@
-import { CanvasTexture, LinearFilter, SRGBColorSpace, type Texture } from 'three';
+import { CanvasTexture, LinearFilter, LinearMipmapLinearFilter, SRGBColorSpace, type Texture } from 'three';
 
 const cache = new Map<string, Texture>();
 
@@ -14,9 +14,13 @@ function canvas(w: number, h: number): [HTMLCanvasElement, CanvasRenderingContex
 function finish(c: HTMLCanvasElement): Texture {
   const tex = new CanvasTexture(c);
   tex.colorSpace = SRGBColorSpace;
-  tex.minFilter = LinearFilter;
+  // Mipmaps matter here: these labels are drawn far smaller than their source
+  // canvas (a 256px plate lands on ~20px of a phone screen), and plain linear
+  // minification aliases the glyphs into noise.
+  tex.generateMipmaps = true;
+  tex.minFilter = LinearMipmapLinearFilter;
   tex.magFilter = LinearFilter;
-  tex.anisotropy = 4;
+  tex.anisotropy = 8;
   return tex;
 }
 
@@ -32,22 +36,24 @@ export function costPlate(value: number, legal: boolean): Texture {
 
   const S = 256;
   const [c, ctx] = canvas(S, S);
-  const ink = legal ? '#04222b' : '#bfe8f7';
-  const plate = legal ? '#7ff2d0' : 'rgba(8,32,42,0.88)';
+  const ink = legal ? '#04222b' : '#f2fbff';
+  // Opaque, not translucent: a see-through plate lets the rock behind it eat
+  // the strokes once the plate is only ~30px on screen.
+  const plate = legal ? '#7ff2d0' : '#0b2b38';
 
   ctx.beginPath();
-  ctx.roundRect(18, 18, S - 36, S - 36, 46);
+  ctx.roundRect(10, 10, S - 20, S - 20, 42);
   ctx.fillStyle = plate;
   ctx.fill();
-  ctx.lineWidth = 10;
-  ctx.strokeStyle = legal ? '#d8fff2' : 'rgba(150,220,240,0.55)';
+  ctx.lineWidth = 9;
+  ctx.strokeStyle = legal ? '#d8fff2' : 'rgba(160,226,246,0.8)';
   ctx.stroke();
 
   ctx.fillStyle = ink;
-  ctx.font = `700 ${S * 0.58}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
+  ctx.font = `800 ${S * 0.72}px ui-sans-serif, system-ui, -apple-system, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(String(value), S / 2, S / 2 + S * 0.03);
+  ctx.fillText(String(value), S / 2, S / 2 + S * 0.04);
 
   const tex = finish(c);
   cache.set(key, tex);

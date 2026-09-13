@@ -19,7 +19,20 @@ html, body {
   color: var(--ink);
   overflow: hidden;
   -webkit-text-size-adjust: 100%;
+  /* Tapping the board must not select a word: on Android Chrome a selected
+     word triggers Touch to Search, which slides a dictionary/search sheet
+     over the card tray mid-game. Nothing here is text the player needs to
+     copy, so selection is off everywhere. */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
 }
+
+/* No double-tap-to-zoom delay or gesture on the controls. */
+#ui, #ui * { touch-action: manipulation; }
 
 #stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 

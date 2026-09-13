@@ -7,6 +7,7 @@
  */
 import { newGame } from '../rules/index.js';
 import { createStage, detectQuality } from '../render/stage.js';
+import { configureLayout } from '../render/layout.js';
 import { GameScene } from '../render/scene.js';
 import { Hud } from '../ui/hud.js';
 import { Controller } from './controller.js';
@@ -26,6 +27,9 @@ function begin(): void {
   // ?watch=1 sits every seat with a bot — an attract mode, and the easiest way
   // to watch a whole game play out.
   const humanSeats = params.get('watch') === '1' ? [] : [0];
+
+  // Must precede the scene: the board bakes ledge positions at build time.
+  configureLayout(window.innerWidth / Math.max(1, window.innerHeight));
 
   const state = newGame(seed, players);
   const quality = detectQuality();
