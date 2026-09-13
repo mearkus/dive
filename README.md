@@ -10,3 +10,16 @@ inverted for a deep-sea theme.
 
 Status: **design stage**. See [DESIGN.md](DESIGN.md) for the rules
 specification, architecture, and milestone plan.
+
+## Running it
+
+```bash
+npm install
+npm run play    # play in the terminal (the game is complete and playable)
+npm run sim     # batch-simulate games and print balance stats
+npm test        # rules engine test suite
+npm run dev     # 3D scene — scaffold only, see milestone M2
+```
+
+`npm run play -- --players=3 --humans=1 --seed=7` — add `--humans=0` to watch
+bots play, `--bot=search` for the stronger opponent.

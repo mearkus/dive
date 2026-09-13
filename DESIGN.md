@@ -55,15 +55,21 @@ Theme mapping:
 
 ## 3. Rules specification (v1, implementable as written)
 
+> **Status: implemented and playtested.** Everything in §3 is live in
+> `src/rules/`, covered by 33 tests, and measured over thousands of simulated
+> games. Numbers below are the tuned values, not the original guesses — see
+> §3.9 for what changed and why.
+
 ### 3.1 Components
 
-- **5 trenches**, depths 4 / 5 / 6 / 7 / 8 ledges.
+- **4 trenches in play**, drawn from five defined ones of depth 4 / 5 / 6 / 7 / 8.
 - Each **ledge** carries a **current value** of 1–6 — what it costs to reach.
   Values are drawn per-trench at setup from a fixed distribution so deeper
   ledges skew expensive (see §3.7).
 - **Surface**: a shared boat row above all trenches; every diver starts here.
-- **Divers**: 5 per player, colour-coded, plus a shape badge for accessibility.
-- **Air deck**: 60 cards, values 1–6, ten of each. Hand size **5**.
+- **Divers**: 4 per player, colour-coded, plus a shape badge for accessibility.
+- **Air deck**: 60 cards, values 1–6, weighted toward low values —
+  **16×1, 14×2, 11×3, 8×4, 6×5, 5×6**. Hand size **5**.
 - **Treasure**: 4 tokens per trench, values descending — the first diver to a
   floor takes the richest.
 
@@ -78,8 +84,9 @@ richest on top. All divers on the surface. Random start player.
 On your turn, do exactly one of:
 
 **A. Descend** — move one of your divers one ledge deeper, paying its cost.
-**B. Surface for air** — discard your whole hand, draw a fresh five. (This is
-your entire turn. It's the anti-deadlock valve; see §10.)
+**B. Surface for air** — discard your whole hand, draw a fresh five. This is
+your entire turn, and it is **only legal when you cannot afford any descend**.
+It is a pressure valve, not a strategic option (§3.9).
 
 Then refill your hand to 5. Play passes left.
 
@@ -110,13 +117,27 @@ you, and stacking onto a rival is a bet that they'll keep moving.
 - A diver arriving on the **floor ledge** takes the top treasure token from
   that trench and immediately surfaces: remove it from the board, token to
   its owner's score pile, diver out of the game.
-- When a trench's fourth token is taken the trench is **picked clean**: it
-  closes, and no diver may enter it. Divers already inside continue normally.
-- **Game end** triggers when any player has surfaced all five divers, or every
-  trench has closed. Finish the round so all players have had equal turns.
+- When a trench's fourth token is taken the trench is **picked clean**. It
+  closes to new divers, and — critically — **every diver still inside it aborts
+  the dive and surfaces immediately with nothing**. The wreck is stripped;
+  there is no reason to keep descending.
+
+  This is the game's second source of tension. Dawdle in a trench and the
+  divers ahead of you can end your dive outright, wasting every card you spent
+  getting there. It is also load-bearing: without it, divers in a picked-clean
+  trench become dead pieces that can never score and never leave, which
+  deadlocks the game permanently (§3.9).
+
+- **The air clock.** Each time the deck is exhausted and the discard pile is
+  reshuffled, air runs lower. After the **6th** reshuffle the game ends no
+  matter what. This guarantees termination even if every player stalls; in
+  practice a game uses about 3 reshuffles, so the clock almost never binds.
+- **Game end** triggers when any player has surfaced all four divers, every
+  trench has closed, or the air runs out. Finish the round so all players have
+  had equal turns.
 - Divers still in the water at the end score **nothing**.
-- Highest treasure total wins. Tiebreak: most divers surfaced, then deepest
-  single haul.
+- Highest treasure total wins. Tiebreak: most hauls brought back (an aborted
+  dive is not a haul), then the single richest haul.
 
 ### 3.7 Starting numbers to tune from
 
@@ -130,12 +151,16 @@ Treasure pools, top token first:
 | Blacklip Wall | 7 | 9, 6, 4, 2 |
 | Sunken Hold | 8 | 12, 8, 5, 3 |
 
+With four trenches in play the set is spread across the depth range, so a
+short game still offers both a cheap trench and a deep one.
+
 Ledge costs: ledge 1 is always 1–2 (cheap entry). Remaining ledges draw from a
 bag weighted toward the deep — roughly `1..3` for the top third, `2..5` for the
 middle, `3..6` for the bottom third, with the floor ledge never below 3.
 
-Expected game length, 3 players: 25–35 turns. If it runs long, cut divers per
-player to 4 before touching the costs.
+Measured game length, 3 players: **49 turns, ~16 per player**. (The original
+estimate of 25–35 was simply bad arithmetic — a diver needs one turn per ledge,
+so total turns scale with divers × depth.)
 
 ### 3.8 Worked example
 
@@ -147,12 +172,68 @@ and hasn't spent a card all game. Ana's consolation: she's still beneath them,
 so the next descent she pays for drags them along again — but she'll reach the
 floor first and take the 7.
 
+### 3.9 What the playtests changed
+
+Milestone M1 built the engine and a terminal game, then ran thousands of
+simulated games to answer the questions §10 raised. Four things changed, and
+one of them was a genuine bug in the rules as first written.
+
+**1. A picked-clean trench deadlocked the game outright.** The original rule —
+"divers already inside continue normally" — created dead pieces: a trench with
+no treasure left still held divers who could descend but could never score. In
+one measured game, twelve divers sat trapped in a stripped trench. No player
+could ever surface all their divers, so the end condition could never fire and
+the game ran to the 3000-turn safety cap. Recalling every diver when a trench
+closes fixes it, and turns dead weight into the game's second tension.
+
+**2. The game had no guaranteed termination.** Even with (1) fixed, nothing
+stopped every player from stalling forever. A board game resolves that
+socially; software cannot. The air clock is the backstop.
+
+**3. Refreshing had to stop being a free choice.** As a voluntary option, a
+third of all turns were spent passing. Restricting it to "only when you can
+afford nothing" cut games from 69 to 49 turns, raised free rides from 16% to
+21% of all movement, and evened out a first-player advantage.
+
+**4. The exact-sum rule really did jam hands.** With a uniform 1–6 deck,
+players were stuck with an unaffordable hand on 15–18% of turns — above the
+15% line §10 set for retuning. Weighting the deck toward low values
+(16/14/11/8/6/5) dropped that to **8–10%** without touching the movement rules.
+
+Measured over 600 games per player count, with the tuned rules:
+
+| | 2 players | 3 players | 4 players |
+| --- | --- | --- | --- |
+| turns per player | 19.7 | 16.4 | 13.9 |
+| forced refreshes | 8.3% | 9.2% | 9.7% |
+| free rides (share of all movement) | 13.3% | 20.9% | 26.8% |
+| aborted dives (share of divers) | 12% | 28% | 38% |
+| seat win rate spread | 51/49 | 31/33/36 | 23/25/27/25 |
+| games ending normally | 100% | 100% | 100% |
+
+Seat order is fair, no game hits the turn cap, and the free ride — the whole
+point of the design — now fires constantly. **The one number still worth
+watching in human playtests is the 4-player abort rate**: at 38%, more than a
+third of divers come home empty because a rival stripped their trench. That may
+read as brutal rather than tense. It tracks the diver-to-token ratio, not the
+trench count (adding a fifth trench changed nothing), so the lever is diver
+count or tokens per trench.
+
+**One thing the simulations cannot tell us** is whether the free ride is *fun*
+or merely frequent — whether handing a rival a lift feels like an agonising
+choice or an annoying tax. That needs humans, and it is the first question to
+put to a real playtest.
+
 ## 4. Why this works as a video game
 
 The board game's tension is social and readable; the screen's job is to make
 the stack state instantly legible and the free ride *feel* like something.
 Three design commitments follow:
 
+0. **Surface divers are interchangeable.** Discovered the moment the terminal
+   game listed its options: offering each idle diver separately turned 4 real
+   choices into 24 identical-looking ones. At the surface the player picks a
+   *trench*, not a diver. The 3D UI must do the same.
 1. **Descents are animated as one event.** When a stack drops, it drops
    together, with a shared line, bubble wash and a settling bounce. The free
    ride should read as a physical consequence, not a rules footnote.
@@ -246,7 +327,9 @@ interface Trench {
 }
 
 type Action =
-  | { kind: 'descend'; diver: string; cards: number[] }  // indices into hand
+  // `cards` are indices into the mover's hand; `trench` is required only
+  // when the diver is entering from the surface.
+  | { kind: 'descend'; diver: string; cards: number[]; trench?: number }
   | { kind: 'refresh' };
 
 type GameEvent =
@@ -254,6 +337,7 @@ type GameEvent =
   | { t: 'stack-moved'; trench: number; from: number; to: number; divers: string[] }
   | { t: 'treasure-taken'; player: number; diver: string; trench: number; value: number }
   | { t: 'trench-closed'; trench: number }
+  | { t: 'divers-recalled'; trench: number; divers: string[] }
   | { t: 'hand-refilled'; player: number; count: number }
   | { t: 'turn-passed'; to: number }
   | { t: 'game-over'; scores: number[] };
@@ -365,20 +449,31 @@ camera move to the diver they're about to move, or their turns are unreadable.
 
 ## 10. Risks and open design questions
 
-**Exact-sum deadlock.** A player may hold five cards that pay for nothing.
-Mitigated by the refresh turn (§3.3A), but if refreshing is common the game
-stalls. *Instrument it*: log refresh frequency in CLI playtests. If it exceeds
-~15% of turns, either widen payment (allow overpay at a penalty) or reweight
-the deck toward low values.
+**✅ Exact-sum deadlock — measured and fixed.** A uniform 1–6 deck jammed hands
+on 15–18% of turns, over the line. Reweighting the deck toward low values
+dropped it to 8–10%. Overpay-with-penalty was never needed. Keep the
+instrument (`npm run sim`) pointed at this number whenever costs or deck
+change.
+
+**✅ Non-termination — found and fixed.** Two separate holes (stranded divers
+in a stripped trench; universal stalling) let games run forever. Fixed by the
+recall rule and the air clock; 0 of 1800 measured games now fail to end. Any
+future rule change must be re-checked against the `full games` test, which
+asserts termination and card conservation over 40 complete games.
 
 **Kingmaking.** Late game, a player out of contention chooses who gets a free
-ride to a wreck. Watch for it in playtests; the fix if it bites is scoring
-divers still in the water for partial depth, which softens the cliff.
+ride to a wreck. Bots cannot reveal this — it needs humans. The fix if it bites
+is scoring divers still in the water for partial depth, which softens the
+cliff.
 
-**The free ride may be too strong.** If parking on rivals dominates, cap it:
-riders beyond the first pay 1 card, or a stack can carry at most two riders.
-Both are one-line changes in `reduce.ts` — keep them behind a rules-variant
-flag so playtests can A/B them.
+**The free ride may be too strong.** At 13–27% of all movement it is central
+without being dominant, and bots that exploit it do not run away with games
+(win margins hold at ~4 points). The `maxRiders` variant is implemented and
+tested if human play says otherwise.
+
+**The 4-player abort rate.** 38% of divers come home empty at four players.
+Tense or just punishing? Humans decide. Levers: divers per player, or a fifth
+token per trench.
 
 **Text legibility underwater.** Fog plus dark plus small numbers is a real
 risk. Prototype the ledge-number treatment in M2, at the real camera distance,
@@ -397,23 +492,27 @@ it's cheaper and reads better under fog).
 
 | # | Goal | Done when |
 | --- | --- | --- |
-| **M0** | Scaffold | Vite + TS + three + Vitest running; CI runs typecheck and tests |
-| **M1** | **Rules engine + CLI** | `src/cli/play.ts` plays a full 3-player game in the terminal; rules unit-tested; **we have playtested it and the game is fun** |
+| **M0** | ✅ Scaffold | Vite + TS + three + Vitest running; CI runs typecheck, tests and build |
+| **M1** | ✅ **Rules engine + CLI** | Engine complete and pure; 33 tests; `npm run play` plays a full game in the terminal; `npm run sim` measures balance. Bot-level tuning is done and the numbers are healthy — **the remaining gate is a human playtest** (§3.9) |
 | **M2** | Static scene | Trenches, ledges, numbers, water mood on screen; legibility verified |
 | **M3** | Playable 3D | Full click-to-move loop, event-driven animations, HUD, hand rail |
 | **M4** | Opponents | Greedy + search bots, difficulty selection, bot camera/pacing |
 | **M5** | Polish | Audio, bloom/particulate, quality tiers, tutorial, end screen, board-mode fallback |
 | **M6** | Stretch | Seeded replays, daily seed + leaderboard, online play, extra trench decks |
 
-**M1 is the gate.** Do not build a single trench mesh until the terminal
-version is fun. If the rules don't work, nothing downstream saves them — and
-the whole engine is testable before any pixel exists.
+**M1 is the gate, and it earned its keep.** Building the terminal version
+first surfaced a rules bug that deadlocked the game permanently, a missing
+termination guarantee, and a UI trap — none of which would have been visible
+until very late if we had started with trench meshes. Do not build 3D until a
+human has played the terminal version and confirmed the free ride is fun, not
+just frequent.
 
 ## 12. Stretch ideas (post-v1, keep out of the way for now)
 
 - **Current cards**: an event deck that reshuffles ledge costs mid-game.
-- **Air as a shared clock**: a global timer that ends the game when the deck
-  runs out, rather than on divers-surfaced.
+- **Air as a shared clock**: promote the air clock (§3.6) from a safety
+  backstop to a real pacing constraint by tightening the limit, so the deep
+  trenches carry genuine time pressure.
 - **Asymmetric divers**: one per player with a small ability (ignores 1 rider,
   or may re-enter a closed trench).
 - **Daily seed**: same trenches and deck for everyone, score-chase.
@@ -427,5 +526,6 @@ Clipped In · Trencher
 
 ---
 
-*Next step: M0 + M1. Say the word and I'll scaffold the project and build the
-rules engine with the terminal playtest loop.*
+*M0 and M1 are complete. Next step: a human playtest of `npm run play`, then
+M2 — and the first thing to prototype there is ledge-number legibility under
+fog, at the real camera distance.*
