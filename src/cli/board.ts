@@ -3,6 +3,7 @@ import {
   type GameEvent,
   type GameState,
 } from '../rules/index.js';
+import { narrate } from '../common/describe.js';
 
 const COL = 17;
 
@@ -63,35 +64,8 @@ export function renderHand(hand: number[]): string {
 }
 
 export function describeEvent(state: GameState, event: GameEvent): string | null {
-  const name = (p: number) => state.players[p]?.name ?? `P${p}`;
-  const trench = (t: number) => state.trenches[t]?.name ?? `trench ${t}`;
-  switch (event.t) {
-    case 'cards-spent':
-      return `${name(event.player)} spends ${event.values.join('+')}`;
-    case 'hand-discarded':
-      return `${name(event.player)} surfaces for air, dumping ${event.values.join(' ')}`;
-    case 'stack-moved': {
-      const [mover, ...riders] = event.divers;
-      const where =
-        event.from === 0
-          ? `enters ${trench(event.trench)}`
-          : `drops to L${event.to} of ${trench(event.trench)}`;
-      const ride = riders.length ? `, carrying ${riders.join(' ')} for free` : '';
-      return `  ${mover} ${where}${ride}`;
-    }
-    case 'treasure-taken':
-      return event.value > 0
-        ? `  ${event.diver} reaches the wreck and surfaces with ${event.value}`
-        : `  ${event.diver} reaches the wreck — stripped bare, nothing left`;
-    case 'trench-closed':
-      return `  ${trench(event.trench)} is picked clean and closes`;
-    case 'divers-recalled':
-      return `  ${event.divers.join(' ')} abort the dive and surface with nothing`;
-    case 'end-triggered':
-      return `  *** ${name(event.player)} triggers the end (${event.reason}) — final round ***`;
-    case 'game-over':
-      return `  *** game over ***`;
-    default:
-      return null;
-  }
+  const line = narrate(state, event);
+  if (!line) return null;
+  const indent = event.t === 'cards-spent' || event.t === 'hand-discarded' ? '' : '  ';
+  return indent + line.text;
 }

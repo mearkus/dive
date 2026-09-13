@@ -2,30 +2,60 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Sunken Hold</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2307293a'/%3E%3Ccircle cx='16' cy='12' r='5.5' fill='%237ff2d0'/%3E%3Cpath d='M16 18c4 3 5 7 5 10H11c0-3 1-7 5-10z' fill='%23ffc94d'/%3E%3C/svg%3E" />
+    <meta name="description" content="A deep-sea salvage race. Descend the trenches, strip the wrecks, and try not to give your rivals a free ride down." />
+    <link rel="stylesheet" href="/src/ui/style.css" />
   </head>
   <body>
     <canvas id="stage"></canvas>
-    <div id="overlay">
-      <h1>Sunken Hold</h1>
-      <p>
-        Rendering starts at milestone M2. The game itself is playable now, in the terminal:
-        <code>npm run play</code>
-      </p>
+
+    <div id="ui">
+      <header id="hud">
+        <div id="players"></div>
+        <div id="meta"></div>
+      </header>
+
+      <aside id="log" aria-live="polite"></aside>
+
+      <footer id="tray">
+        <div id="prompt">Loading the dive…</div>
+        <div id="hand"></div>
+        <div id="options"></div>
+      </footer>
     </div>
+
+    <div id="end"></div>
+
+    <div id="intro">
+      <div class="panel">
+        <h1>Sunken Hold</h1>
+        <p class="tag">A deep-sea salvage race</p>
+        <ol>
+          <li>Spend <b>air cards</b> to drop a diver one ledge. You must pay a ledge's number <b>exactly</b>.</li>
+          <li>Divers sharing a ledge are clipped to one line — <b>when you descend, everyone stacked above you comes too, free</b>.</li>
+          <li>First to a wreck takes the richest treasure. When the last token goes, the trench is stripped and <b>everyone still inside surfaces with nothing</b>.</li>
+        </ol>
+        <div class="row">
+          <label>Players
+            <select id="playerCount">
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
+              <option value="4">4</option>
+            </select>
+          </label>
+          <label>Opponents
+            <select id="difficulty">
+              <option value="greedy" selected>Standard</option>
+              <option value="search">Tough</option>
+            </select>
+          </label>
+        </div>
+        <button id="begin">Dive</button>
+      </div>
+    </div>
+
     <script type="module" src="/src/app/main.ts"></script>
   </body>
 </html>
-<style>
-  :root { color-scheme: dark; }
-  html, body { height: 100%; margin: 0; background: #07202c; }
-  #stage { position: fixed; inset: 0; display: block; width: 100%; height: 100%; }
-  #overlay {
-    position: relative; padding: 2rem; max-width: 34rem;
-    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
-    color: #d8f2ff; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
-  }
-  #overlay h1 { margin: 0 0 .5rem; font-size: 1.6rem; letter-spacing: .04em; }
-  code { background: rgba(255,255,255,.12); padding: .1em .4em; border-radius: 4px; }
-</style>
