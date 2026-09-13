@@ -3,12 +3,25 @@
  * always lands where the eye says it should.
  */
 export const TRENCH_SPACING = 7.6;
-export const LEDGE_DROP = 2.0;
+/**
+ * Vertical gap between ledges. Mutable because portrait viewports need more
+ * of it: there the camera distance is set by board width, leaving vertical
+ * slack, while labels scale up to stay readable and would otherwise collide.
+ * Live ES module binding — configureLayout() must run before the board is built.
+ */
+export let LEDGE_DROP = 2.0;
 export const LEDGE_WIDTH = 5.2;
 export const LEDGE_DEPTH = 2.3;
 export const SURFACE_Y = 1.2;
 /** Trench nameplates hang above the waiting divers. */
-export const NAMEPLATE_Y = 5.4;
+export let NAMEPLATE_Y = 5.4;
+
+/** Set once at startup from the viewport shape. */
+export function configureLayout(aspect: number): void {
+  const portrait = aspect < 0.95;
+  LEDGE_DROP = portrait ? 3.5 : 2.0;
+  NAMEPLATE_Y = portrait ? 6.4 : 5.4;
+}
 
 export function trenchX(index: number, count: number): number {
   return (index - (count - 1) / 2) * TRENCH_SPACING;
@@ -19,10 +32,13 @@ export function ledgeY(ledge: number): number {
   return ledge === 0 ? SURFACE_Y : -ledge * LEDGE_DROP;
 }
 
+/** The left of each ledge belongs to its cost plate; divers use the rest. */
+export const DIVER_ROW_OFFSET = 0.75;
+
 /** Spread divers along a ledge, tightening the spacing as a stack grows. */
 export function diverSlotX(index: number, total: number): number {
-  const spacing = Math.min(0.95, (LEDGE_WIDTH - 1.1) / Math.max(1, total));
-  return (index - (total - 1) / 2) * spacing;
+  const spacing = Math.min(0.95, (LEDGE_WIDTH - 2.5) / Math.max(1, total));
+  return (index - (total - 1) / 2) * spacing + DIVER_ROW_OFFSET;
 }
 
 /** The world-space box the board occupies, including surface and nameplates. */

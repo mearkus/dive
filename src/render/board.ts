@@ -14,7 +14,7 @@ import {
 import type { GameState } from '../rules/index.js';
 import { GOLD, LEDGE, ROCK, ROCK_LIT, depthMix } from './palette.js';
 import { costPlate, nameplate, rockFace, surfaceShimmer } from './textures.js';
-import { LEDGE_DEPTH, LEDGE_DROP, LEDGE_WIDTH, NAMEPLATE_Y, SURFACE_Y, ledgeY, trenchX } from './layout.js';
+import { DIVER_ROW_OFFSET, LEDGE_DEPTH, LEDGE_DROP, LEDGE_WIDTH, NAMEPLATE_Y, SURFACE_Y, ledgeY, trenchX } from './layout.js';
 
 export interface LedgeView {
   trench: number;
@@ -110,7 +110,8 @@ export function buildBoard(state: GameState): BoardView {
       const plate = new Sprite(
         new SpriteMaterial({ map: costPlate(trench.costs[ledge - 1], false), depthWrite: false, fog: false }),
       );
-      plate.position.set(-LEDGE_WIDTH / 2 - 0.55, -0.3, 0.9);
+      // In front of the shelf box, or the shelf clips the bottom of the digit.
+      plate.position.set(-LEDGE_WIDTH / 2 + 0.7, -0.1, LEDGE_DEPTH / 2 + 0.5);
       plate.scale.set(1.15, 1.15, 1);
       group.add(plate);
 
@@ -141,7 +142,7 @@ export function buildBoard(state: GameState): BoardView {
         new BoxGeometry(1, 0.055, 0.055),
         new MeshBasicMaterial({ color: 0xbfe6f2, transparent: true, opacity: 0.72 }),
       );
-      line.position.set(0, 0.34, 0.3);
+      line.position.set(DIVER_ROW_OFFSET, 0.34, 0.3);
       line.visible = false;
       group.add(line);
 
