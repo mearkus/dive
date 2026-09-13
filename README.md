@@ -8,8 +8,8 @@ Inspired by the shape of the board game *Mountain Goats* (parallel numbered
 tracks, numbered cards, and the stacking free-ride rule), re-derived and
 inverted for a deep-sea theme.
 
-Status: **design stage**. See [DESIGN.md](DESIGN.md) for the rules
-specification, architecture, and milestone plan.
+**Playable now** — in the browser and in the terminal. See [DESIGN.md](DESIGN.md)
+for the rules specification, architecture, and milestone plan.
 
 ## Running it
 
@@ -18,11 +18,31 @@ npm install
 npm run play    # play in the terminal (the game is complete and playable)
 npm run sim     # batch-simulate games and print balance stats
 npm test        # rules engine test suite
-npm run dev     # 3D scene — scaffold only, see milestone M2
+npm run dev     # the browser game
 ```
 
 `npm run play -- --players=3 --humans=1 --seed=7` — add `--humans=0` to watch
 bots play, `--bot=search` for the stronger opponent.
+
+### Playing in the browser
+
+Click one of your divers, or any glowing ledge, then pick which cards to spend
+— every exact-sum combination is offered, and hovering one shows what it costs
+you. A ledge holding other divers means they ride down with you for free.
+
+URL options: `?seed=42` replays an exact board, `?watch=1` sits a bot in every
+seat and plays the game out on its own.
+
+### How it is put together
+
+    src/rules/   pure game engine — no three.js, no DOM. apply(state, action) -> {state, events}
+    src/ai/      bots, running over the same reducer
+    src/render/  three.js scene; consumes events as an animation timeline
+    src/ui/      DOM overlay (HUD, hand, log)
+    src/cli/     terminal game and the balance simulator
+
+Nothing in `render/` or `ui/` can change game state. That is what lets the
+terminal game, the browser game, and the bots all share one rulebook.
 
 ## Deployment
 
@@ -36,5 +56,4 @@ Source* to **GitHub Actions**. Until that is set the workflow fails at the
 "Configure Pages" step.
 
 The deploy runs typecheck and the test suite first, so a broken build never
-reaches the site. Note that what deploys today is the M0 placeholder scene —
-the game itself is in the terminal until milestone M3.
+reaches the site.

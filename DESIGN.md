@@ -494,8 +494,8 @@ it's cheaper and reads better under fog).
 | --- | --- | --- |
 | **M0** | ✅ Scaffold | Vite + TS + three + Vitest running; CI runs typecheck, tests and build |
 | **M1** | ✅ **Rules engine + CLI** | Engine complete and pure; 33 tests; `npm run play` plays a full game in the terminal; `npm run sim` measures balance. Bot-level tuning is done and the numbers are healthy — **the remaining gate is a human playtest** (§3.9) |
-| **M2** | Static scene | Trenches, ledges, numbers, water mood on screen; legibility verified |
-| **M3** | Playable 3D | Full click-to-move loop, event-driven animations, HUD, hand rail |
+| **M2** | ✅ Static scene | Trenches as lit shafts, cost plates, treasure plates, fog/backdrop/particulate; legibility verified in-browser at real camera distance |
+| **M3** | ✅ **Playable 3D** | Click a diver or a glowing ledge → pick an exact-sum payment → animated descent. HUD, hand rail, play log, bots, end screen, `?watch=1` attract mode. Verified end-to-end in a headless browser: a full 45-turn game with zero page errors |
 | **M4** | Opponents | Greedy + search bots, difficulty selection, bot camera/pacing |
 | **M5** | Polish | Audio, bloom/particulate, quality tiers, tutorial, end screen, board-mode fallback |
 | **M6** | Stretch | Seeded replays, daily seed + leaderboard, online play, extra trench decks |
@@ -506,6 +506,39 @@ termination guarantee, and a UI trap — none of which would have been visible
 until very late if we had started with trench meshes. Do not build 3D until a
 human has played the terminal version and confirmed the free ride is fun, not
 just frequent.
+
+## 11b. What building the browser client changed
+
+M2/M3 are done and the game is playable. Four things the engine work could not
+have told us:
+
+**Legibility was the right thing to prototype first, and the fix was not
+subtle.** Bare numbers in fog are unreadable. What works is an opaque plate
+behind every number, `fog: false` on all UI sprites so depth never costs
+legibility, and — the part that was not in the plan — **labels that hold a
+near-constant screen size**. Fitting a four-trench board onto a phone pushes
+the camera far enough back that world-scaled text becomes noise. Label scale
+is now derived from camera distance every frame.
+
+**The camera must fit the board to the viewport's aspect ratio.** The first
+build framed on width alone and showed two of four trenches on a phone.
+`fitDistance()` now solves for both axes and reserves margin for the HUD and
+card tray.
+
+**A focus-follows-selection camera was a mistake.** Panning the orbit target
+toward the chosen trench accumulated drift across a game until the deepest
+trench sat off screen. Removed — the board fits in one view, so nothing needs
+to move.
+
+**Stack rendering needs three cues, not one.** Divers on a shared ledge now
+spread left-to-right in stack order (leftmost is the carrier), alternate
+front/back so badges never sit flush, shrink as the stack grows, and are
+joined by a visible dive line. A six-diver stack was unreadable without all
+four.
+
+Still deferred to M5, as planned: audio, bloom, the tutorial, and the 2D
+board-mode fallback. Phone play works and is legible but is not yet optimised
+— the board is necessarily small in portrait.
 
 ## 12. Stretch ideas (post-v1, keep out of the way for now)
 
@@ -526,6 +559,7 @@ Clipped In · Trencher
 
 ---
 
-*M0 and M1 are complete. Next step: a human playtest of `npm run play`, then
-M2 — and the first thing to prototype there is ledge-number legibility under
-fog, at the real camera distance.*
+*M0–M3 are complete and the game is playable in the browser. Next: M4 (bot
+pacing and difficulty selection are in, but the search bot wants tuning) and
+M5 polish. The open question is still the one simulations cannot answer —
+whether the free ride is fun or merely frequent.*
