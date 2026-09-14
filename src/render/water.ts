@@ -36,7 +36,8 @@ export function buildWater(scene: Scene, options: WaterOptions): { update(t: num
         new MeshBasicMaterial({
           color: new Color(0x8fe9ff),
           transparent: true,
-          opacity: 0.1,
+          // Bloom re-brightens these, so the top tier starts them dimmer.
+          opacity: options.quality === 'high' ? 0.055 : 0.1,
           blending: AdditiveBlending,
           depthWrite: false,
         }),
@@ -76,6 +77,7 @@ export function buildWater(scene: Scene, options: WaterOptions): { update(t: num
     group.add(motes);
 
     // Motes drift slowly upward, wrapping at the surface.
+    const base = options.quality === 'high' ? 0.045 : 0.085;
     const attr = geo.getAttribute('position') as Float32BufferAttribute;
     let last = 0;
     return {
@@ -90,7 +92,7 @@ export function buildWater(scene: Scene, options: WaterOptions): { update(t: num
         attr.needsUpdate = true;
         for (let i = 0; i < shafts.length; i++) {
           const m = shafts[i].material as MeshBasicMaterial;
-          m.opacity = 0.085 + Math.sin(t * 0.5 + i) * 0.03;
+          m.opacity = base + Math.sin(t * 0.5 + i) * 0.03;
         }
       },
     };

@@ -67,6 +67,12 @@ export class GameScene {
       this.applyLabelScale();
     }
 
+    // The kelp drifts in the current — a still fringe read as scenery pasted
+    // onto the rock rather than something underwater.
+    for (const blade of this.board.kelp) {
+      blade.mesh.rotation.z = blade.lean + Math.sin(t * 0.7 + blade.phase) * 0.14;
+    }
+
     // Legal targets breathe so they read as "you can go here".
     const pulse = 0.28 + Math.sin(t * 3) * 0.16;
     for (const ledge of this.board.ledges) {

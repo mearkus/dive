@@ -12,6 +12,7 @@ import {
   type Object3D,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import type { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { WATER_DEEP, WATER_SHALLOW } from './palette.js';
 import { waterBackdrop } from './textures.js';
 import { fitDistance, frameFor, verticalExtent } from './layout.js';
@@ -29,8 +30,10 @@ export interface Stage {
   start(): void;
 }
 
-/** Pick a quality tier from what the device admits to. */
+/** Pick a quality tier from what the device admits to. `?quality=` overrides. */
 export function detectQuality(): Quality {
+  const forced = new URLSearchParams(location.search).get('quality');
+  if (forced === 'low' || forced === 'medium' || forced === 'high') return forced;
   const cores = navigator.hardwareConcurrency ?? 4;
   const mobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
   if (mobile || cores <= 4) return 'low';
@@ -73,6 +76,32 @@ export function createStage(canvas: HTMLCanvasElement, trenchCount: number, maxD
   const raycaster = new Raycaster();
   const pointer = new Vector2();
 
+  /**
+   * Bloom on the top tier only, and deliberately restrained: a high threshold
+   * so only genuinely bright things glow — lamp cones, the gold over a wreck —
+   * and never the cost plates, whose legibility the whole board depends on.
+   */
+  let composer: EffectComposer | null = null;
+  if (quality === 'high') {
+    // Loaded on demand: the post-processing passes are about 45 kB, and every
+    // device that will not run them should not pay to download them.
+    void (async () => {
+      const [{ EffectComposer: Composer }, { RenderPass }, { UnrealBloomPass }, { OutputPass }] =
+        await Promise.all([
+          import('three/examples/jsm/postprocessing/EffectComposer.js'),
+          import('three/examples/jsm/postprocessing/RenderPass.js'),
+          import('three/examples/jsm/postprocessing/UnrealBloomPass.js'),
+          import('three/examples/jsm/postprocessing/OutputPass.js'),
+        ]);
+      const built = new Composer(renderer);
+      built.addPass(new RenderPass(scene, camera));
+      built.addPass(new UnrealBloomPass(new Vector2(1, 1), 0.18, 0.25, 0.95));
+      built.addPass(new OutputPass());
+      built.setSize(window.innerWidth, window.innerHeight);
+      composer = built;
+    })();
+  }
+
   const measure = (id: string) => document.getElementById(id)?.getBoundingClientRect().height ?? 0;
 
   /** Fractions of the viewport height hidden behind the HUD and the card tray. */
@@ -85,6 +114,7 @@ export function createStage(canvas: HTMLCanvasElement, trenchCount: number, maxD
     const w = window.innerWidth;
     const h = window.innerHeight;
     renderer.setSize(w, h, false);
+    composer?.setSize(w, h);
     camera.aspect = w / Math.max(h, 1);
     camera.updateProjectionMatrix();
 
@@ -144,7 +174,8 @@ export function createStage(canvas: HTMLCanvasElement, trenchCount: number, maxD
         const t = clock.getElapsedTime();
         controls.update();
         for (const fn of callbacks) fn(t, dt);
-        renderer.render(scene, camera);
+        if (composer) composer.render();
+        else renderer.render(scene, camera);
       });
     },
   };

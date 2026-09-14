@@ -11,12 +11,21 @@ import { configureLayout } from '../render/layout.js';
 import { GameScene } from '../render/scene.js';
 import { Hud } from '../ui/hud.js';
 import { Coach } from '../ui/coach.js';
+import { Sfx } from '../ui/audio.js';
 import { Controller } from './controller.js';
 
 function element<T extends HTMLElement>(id: string): T {
   const node = document.getElementById(id);
   if (!node) throw new Error(`missing #${id}`);
   return node as T;
+}
+
+const sfx = new Sfx();
+
+function syncMuteButton(): void {
+  const button = element<HTMLButtonElement>('mute');
+  button.classList.toggle('off', sfx.isMuted);
+  button.setAttribute('aria-pressed', String(!sfx.isMuted));
 }
 
 function begin(): void {
@@ -47,6 +56,7 @@ function begin(): void {
     { players, humanSeats, seed, difficulty },
     state,
     new Coach(tips),
+    sfx,
   );
 
   element('intro').classList.add('hide');
@@ -68,6 +78,12 @@ if (Coach.anySeen()) {
 
 // The rules stay one tap away for the whole game — the cost/payment model is
 // not something a player should have to remember from an intro screen.
+syncMuteButton();
+element('mute').addEventListener('click', () => {
+  sfx.setMuted(!sfx.isMuted);
+  syncMuteButton();
+});
+
 const rules = element('rules');
 element('help').addEventListener('click', () => rules.classList.add('show'));
 element('rulesClose').addEventListener('click', () => rules.classList.remove('show'));

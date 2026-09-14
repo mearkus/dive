@@ -497,7 +497,7 @@ it's cheaper and reads better under fog).
 | **M2** | ✅ Static scene | Trenches as lit shafts, cost plates, treasure plates, fog/backdrop/particulate; legibility verified in-browser at real camera distance |
 | **M3** | ✅ **Playable 3D** | Click a diver or a glowing ledge → pick an exact-sum payment → animated descent. HUD, hand rail, play log, bots, end screen, `?watch=1` attract mode. Verified end-to-end in a headless browser: a full 45-turn game with zero page errors |
 | **M4** | ✅ Opponents | Greedy + search bots, difficulty selection, bot pacing. Strength **measured**, not assumed: search wins 62% of seats head-to-head at 2 players and 55% against a 33% fair share at 3 (§11c) |
-| **M5** | Polish (in progress) | ✅ tutorial, end screen, quality tiers, particulate. Remaining: audio, bloom, 2D board-mode fallback |
+| **M5** | Polish (in progress) | ✅ tutorial, end screen, quality tiers, particulate, audio, bloom, art pass. Remaining: 2D board-mode fallback |
 | **M6** | Stretch | Seeded replays, daily seed + leaderboard, online play, extra trench decks |
 
 **M1 is the gate, and it earned its keep.** Building the terminal version
@@ -680,6 +680,29 @@ measurements:
   the board. The camera now centres on the band the UI actually leaves visible,
   and the board's vertical extent is derived from where things really are
   (nameplate top, treasure below the deepest wreck) instead of a magic number.
+
+## 11g. Sound, and what bloom cost
+
+**Sound is synthesised, not shipped.** The whole palette is bubbles, thuds and
+chimes: a few oscillators and a noise buffer, where audio files would have
+been most of a megabyte on a game that otherwise loads in one request. Cues
+are driven off the same ordered event list the renderer animates, so a sound
+can never disagree with what is on screen. The AudioContext is built lazily on
+the first cue, which always follows the player pressing Dive, so autoplay
+policy needs no special case. Muting is one button and persists.
+
+**Bloom was worse before it was better.** The first configuration
+(strength 0.34, threshold 0.92) amplified the additive light shafts into
+opaque grey cones that flattened the rock and washed the whole image out —
+visibly worse than the medium tier it was meant to improve on. Tuned down to
+0.18 at threshold 0.95, with the shafts started dimmer on that tier to
+compensate, it is a gentle glow on gold and lamp light and leaves the cost
+plates untouched. Worth knowing if anyone reaches for the strength dial: the
+board is mostly dark, so bloom has very little to grab except the things that
+must stay readable.
+
+The passes are ~19 kB and load on demand, so only the top tier downloads them.
+`?quality=low|medium|high` forces a tier, which is also how this was compared.
 
 ## 12. Stretch ideas (post-v1, keep out of the way for now)
 

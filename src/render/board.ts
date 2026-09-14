@@ -45,6 +45,8 @@ export interface BoardView {
   targets: Mesh[];
   nameplates: { trench: number; sprite: Sprite }[];
   treasureLabels: { trench: number; sprite: Sprite }[];
+  /** Kelp blades, swayed by the render loop. */
+  kelp: { mesh: Mesh; phase: number; lean: number }[];
   ledgeAt(trench: number, ledge: number): LedgeView | undefined;
   /** Reposition everything that depends on LEDGE_DROP / NAMEPLATE_Y. */
   relayout(): void;
@@ -101,6 +103,7 @@ export function buildBoard(state: GameState): BoardView {
   const targets: Mesh[] = [];
   const nameplates: BoardView['nameplates'] = [];
   const walls: WallView[] = [];
+  const kelp: BoardView['kelp'] = [];
   const treasureLabels: BoardView['treasureLabels'] = [];
   const count = state.trenches.length;
   const maxDepth = Math.max(...state.trenches.map((t) => t.depth));
@@ -151,6 +154,7 @@ export function buildBoard(state: GameState): BoardView {
     nameplates.push({ trench: trench.id, sprite: label });
 
     // A fringe of kelp around the mouth of the shaft.
+    const kelpBlades = kelp;
     for (let blade = 0; blade < 9; blade++) {
       const kelp = new Mesh(
         kelpBlade(trench.id * 11 + blade),
@@ -165,6 +169,7 @@ export function buildBoard(state: GameState): BoardView {
       kelp.rotation.z = (blade - 4) * 0.09;
       kelp.rotation.y = blade * 0.4;
       root.add(kelp);
+      kelpBlades.push({ mesh: kelp, phase: trench.id * 2.1 + blade * 0.7, lean: (blade - 4) * 0.09 });
     }
 
     for (let ledge = 1; ledge <= trench.depth; ledge++) {
@@ -306,6 +311,7 @@ export function buildBoard(state: GameState): BoardView {
     targets,
     nameplates,
     treasureLabels,
+    kelp,
     ledgeAt: (trench, ledge) => index.get(`${trench}:${ledge}`),
     relayout() {
       for (const ledge of ledges) ledge.group.position.y = ledgeY(ledge.ledge);
