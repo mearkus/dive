@@ -135,9 +135,15 @@ export class Hud {
     if (descend.from.kind === 'surface') {
       return `Enter <b>${trench.name}</b> — ledge 1, cost <b>${descend.cost}</b>`;
     }
+    // Naming the empty case matters as much as the full one: "why didn't the
+    // free ride happen?" is answered by being last onto the ledge.
+    const stack = trench.stacks[descend.from.ledge - 1];
+    const hasDiversBelow = stack.indexOf(descend.diver) > 0;
     const riders = descend.riders.length
-      ? ` <span class="warn">carries ${descend.riders.join(', ')} free</span>`
-      : '';
+      ? ` <span class="warn">tows ${descend.riders.join(', ')} free</span>`
+      : hasDiversBelow
+        ? ` <span class="good">tows nobody — you are last onto this ledge</span>`
+        : '';
     const wreck = descend.reachesWreck
       ? ` <span class="good">reaches the wreck — takes ${trench.treasure[0] ?? 0}</span>`
       : '';
