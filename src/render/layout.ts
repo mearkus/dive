@@ -48,22 +48,34 @@ export function diverSlotX(index: number, total: number): number {
   return (index - (total - 1) / 2) * spacing + DIVER_ROW_OFFSET;
 }
 
+/**
+ * The vertical span of everything drawn, measured rather than guessed: from the
+ * top of the trench nameplates down past the treasure hanging below the
+ * deepest wreck. Framing used constants that did not match this, which left
+ * the board a little too high and put a nameplate behind the HUD.
+ */
+export function verticalExtent(maxDepth: number) {
+  // The extra top margin drops the nameplates clear of the HUD chips, which
+  // sit at the same height on the left.
+  const top = NAMEPLATE_Y + 2.6;
+  const bottom = -(maxDepth * LEDGE_DROP) - 3.1;
+  return { top, bottom, height: top - bottom, center: (top + bottom) / 2 };
+}
+
 /** The world-space box the board occupies, including surface and nameplates. */
 export function boardExtent(trenchCount: number, maxDepth: number) {
   return {
     width: trenchCount * TRENCH_SPACING + 5.5,
-    height: maxDepth * LEDGE_DROP + 9.5,
+    height: verticalExtent(maxDepth).height,
   };
 }
 
 /** Where the camera should look to frame a board of this size. */
 export function frameFor(trenchCount: number, maxDepth: number) {
-  const height = maxDepth * LEDGE_DROP;
+  const { center, height } = verticalExtent(maxDepth);
   return {
-    // Sit the framing slightly high so the top HUD does not sit on the
-    // trench nameplates.
-    center: { x: 0, y: -height / 2 + 1.4, z: 0 },
-    distance: Math.max(26, trenchCount * 8.2, height * 1.55),
+    center: { x: 0, y: center, z: 0 },
+    distance: Math.max(26, trenchCount * 8.2, height * 1.4),
   };
 }
 

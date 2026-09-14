@@ -14,7 +14,7 @@ import {
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { WATER_DEEP, WATER_SHALLOW } from './palette.js';
 import { waterBackdrop } from './textures.js';
-import { fitDistance, frameFor } from './layout.js';
+import { fitDistance, frameFor, verticalExtent } from './layout.js';
 
 export type Quality = 'low' | 'medium' | 'high';
 
@@ -73,11 +73,12 @@ export function createStage(canvas: HTMLCanvasElement, trenchCount: number, maxD
   const raycaster = new Raycaster();
   const pointer = new Vector2();
 
-  /** How much of the viewport the fixed UI actually occupies right now. */
-  function chromeFraction(): number {
-    const height = window.innerHeight;
-    const measure = (id: string) => document.getElementById(id)?.getBoundingClientRect().height ?? 0;
-    return (measure('hud') + measure('tray') + 26) / Math.max(1, height);
+  const measure = (id: string) => document.getElementById(id)?.getBoundingClientRect().height ?? 0;
+
+  /** Fractions of the viewport height hidden behind the HUD and the card tray. */
+  function chrome(): { top: number; bottom: number } {
+    const height = Math.max(1, window.innerHeight);
+    return { top: (measure('hud') + 14) / height, bottom: (measure('tray') + 14) / height };
   }
 
   function resize(): void {
@@ -89,13 +90,33 @@ export function createStage(canvas: HTMLCanvasElement, trenchCount: number, maxD
 
     // Re-frame so the whole board fits this viewport, keeping the direction
     // the player has orbited to.
-    const distance = fitDistance(camera.fov, camera.aspect, trenchCount, maxDepth, chromeFraction());
+    const { top, bottom } = chrome();
+    const distance = fitDistance(camera.fov, camera.aspect, trenchCount, maxDepth, top + bottom);
+
+    // Centre the board on the band the UI leaves visible, not on the canvas.
+    // The tray is far taller than the HUD, so centring on the canvas pushed
+    // the deepest ledges and their treasure behind it.
+    const visible = 2 * distance * Math.tan((camera.fov * Math.PI) / 360);
+    const band = (top + (1 - bottom)) / 2;
+    controls.target.y = verticalExtent(maxDepth).center - visible * (0.5 - band);
+
     const direction = camera.position.clone().sub(controls.target).normalize();
     camera.position.copy(controls.target).addScaledVector(direction, distance);
     controls.update();
   }
   window.addEventListener('resize', resize);
   resize();
+
+  // The tray's height is not fixed — adding the deck and discard piles made it
+  // taller and quietly pushed the deepest ledges behind it. Re-frame whenever
+  // the chrome changes size, not only when the window does.
+  if ('ResizeObserver' in window) {
+    const observer = new ResizeObserver(() => resize());
+    for (const id of ['tray', 'hud']) {
+      const node = document.getElementById(id);
+      if (node) observer.observe(node);
+    }
+  }
 
   const callbacks: ((t: number, dt: number) => void)[] = [];
   const clock = new Clock();

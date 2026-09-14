@@ -99,7 +99,11 @@ export class Hud {
     cards.forEach((value, i) => {
       const card = document.createElement('span');
       card.className = `card${used.includes(i) ? ' used' : ''}${isNew[i] ? ' dealt' : ''}`;
-      card.innerHTML = `<span class="idx">${value}</span><span class="big">${value}</span>`;
+      // The value is a lungful of air, so it is also shown as bubbles.
+      const bubbles = '<i></i>'.repeat(value);
+      card.innerHTML =
+        `<span class="idx">${value}</span><span class="big">${value}</span>` +
+        `<span class="bubbles">${bubbles}</span>`;
       if (isNew[i]) card.style.animationDelay = `${dealt++ * 70}ms`;
       this.hand.appendChild(card);
     });

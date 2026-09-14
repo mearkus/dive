@@ -1,5 +1,7 @@
 import {
   BoxGeometry,
+  ExtrudeGeometry,
+  Shape,
   Color,
   DoubleSide,
   Group,
@@ -48,6 +50,51 @@ export interface BoardView {
   relayout(): void;
 }
 
+/**
+ * An outcrop, not a box: the slab is a slightly irregular polygon so the
+ * ledges read as broken rock shelves rather than shipping crates. Seeded off
+ * the trench and ledge so every shelf differs but is stable across relayouts.
+ */
+function rockSlab(seed: number, width: number, depth: number): ExtrudeGeometry {
+  let n = seed * 9301 + 49297;
+  const rnd = () => ((n = (n * 9301 + 49297) % 233280) / 233280);
+
+  const halfW = width / 2;
+  const jag = () => (rnd() - 0.5) * 0.34;
+  const shape = new Shape();
+  shape.moveTo(-halfW, -depth / 2);
+  shape.lineTo(-halfW + 0.2 + jag(), depth / 2 + jag() * 0.4);
+  shape.lineTo(-halfW * 0.35 + jag(), depth / 2 + 0.1 + jag() * 0.5);
+  shape.lineTo(halfW * 0.3 + jag(), depth / 2 + jag() * 0.5);
+  shape.lineTo(halfW - 0.15 + jag(), depth / 2 - 0.05 + jag() * 0.4);
+  shape.lineTo(halfW, -depth / 2 + 0.12);
+  shape.closePath();
+
+  const geo = new ExtrudeGeometry(shape, {
+    depth: 0.34,
+    bevelEnabled: true,
+    bevelThickness: 0.07,
+    bevelSize: 0.06,
+    bevelSegments: 1,
+  });
+  // Extrude builds on XY; lay it flat so the extrusion becomes thickness.
+  geo.rotateX(-Math.PI / 2);
+  return geo;
+}
+
+/** A frond of kelp, swaying is handled by the caller. */
+function kelpBlade(seed: number): ExtrudeGeometry {
+  let n = seed * 4801 + 9311;
+  const rnd = () => ((n = (n * 9301 + 49297) % 233280) / 233280);
+  const height = 0.85 + rnd() * 1.15;
+  const shape = new Shape();
+  shape.moveTo(-0.1, 0);
+  shape.quadraticCurveTo(-0.26, height * 0.5, -0.06, height);
+  shape.quadraticCurveTo(0.09, height * 0.5, 0.1, 0);
+  shape.closePath();
+  return new ExtrudeGeometry(shape, { depth: 0.03, bevelEnabled: false, curveSegments: 5 });
+}
+
 export function buildBoard(state: GameState): BoardView {
   const root = new Group();
   const ledges: LedgeView[] = [];
@@ -67,7 +114,7 @@ export function buildBoard(state: GameState): BoardView {
       new PlaneGeometry(LEDGE_WIDTH + 1.6, wallHeight, 1, 8),
       new MeshStandardMaterial({
         map: rockFace(trench.id + 1),
-        color: new Color(depthMix(ROCK_LIT, ROCK, 0.05)),
+        color: new Color(depthMix(ROCK_LIT, ROCK, -0.25)),
         roughness: 1,
         metalness: 0,
         side: DoubleSide,
@@ -103,6 +150,23 @@ export function buildBoard(state: GameState): BoardView {
     root.add(label);
     nameplates.push({ trench: trench.id, sprite: label });
 
+    // A fringe of kelp around the mouth of the shaft.
+    for (let blade = 0; blade < 9; blade++) {
+      const kelp = new Mesh(
+        kelpBlade(trench.id * 11 + blade),
+        new MeshStandardMaterial({
+          color: blade % 3 === 0 ? 0x4f8f5c : blade % 3 === 1 ? 0x37784f : 0x2b6146,
+          roughness: 1,
+          side: DoubleSide,
+        }),
+      );
+      const across = (blade / 8 - 0.5) * (LEDGE_WIDTH + 1.9);
+      kelp.position.set(x + across, -1.35, LEDGE_DEPTH * 0.75);
+      kelp.rotation.z = (blade - 4) * 0.09;
+      kelp.rotation.y = blade * 0.4;
+      root.add(kelp);
+    }
+
     for (let ledge = 1; ledge <= trench.depth; ledge++) {
       const y = ledgeY(ledge);
       const isWreck = ledge === trench.depth;
@@ -110,15 +174,34 @@ export function buildBoard(state: GameState): BoardView {
       group.position.set(x, y, 0);
 
       const shelf = new Mesh(
-        new BoxGeometry(LEDGE_WIDTH, 0.34, LEDGE_DEPTH),
+        rockSlab(trench.id * 31 + ledge, LEDGE_WIDTH, LEDGE_DEPTH),
         new MeshStandardMaterial({
           color: new Color(depthMix(LEDGE, ROCK, ledge / maxDepth)),
-          roughness: 0.9,
+          roughness: 0.95,
+          flatShading: true,
           emissive: new Color(0x000000),
         }),
       );
       shelf.position.y = -0.42;
       group.add(shelf);
+
+      // Coral nubs clinging to the outcrop — small, but they break the
+      // repetition that made every shelf look machined.
+      const coralSeed = trench.id * 17 + ledge * 5;
+      for (let n = 0; n < 3; n++) {
+        const t = ((coralSeed + n * 7) % 13) / 13;
+        const nub = new Mesh(
+          new BoxGeometry(0.13 + t * 0.14, 0.18 + t * 0.34, 0.12 + t * 0.12),
+          new MeshStandardMaterial({
+            color: n % 2 ? 0xe07f68 : 0x7fd4b6,
+            roughness: 1,
+            flatShading: true,
+          }),
+        );
+        nub.position.set(-LEDGE_WIDTH / 2 + 0.5 + t * (LEDGE_WIDTH - 1.2), -0.2, LEDGE_DEPTH / 2 - 0.35 - t * 0.5);
+        nub.rotation.set(t * 0.4, t * 2.4, t * 0.3);
+        group.add(nub);
+      }
 
       // Cost plate, mounted at the near edge where the camera can read it.
       const plate = new Sprite(
@@ -130,19 +213,43 @@ export function buildBoard(state: GameState): BoardView {
       group.add(plate);
 
       if (isWreck) {
+        // A broken hull lying on its side, ribs showing, not a crate.
+        const hullShape = new Shape();
+        hullShape.moveTo(-1.5, -0.32);
+        hullShape.quadraticCurveTo(-1.75, 0.18, -1.2, 0.44);
+        hullShape.lineTo(1.25, 0.5);
+        hullShape.quadraticCurveTo(1.72, 0.3, 1.5, -0.3);
+        hullShape.quadraticCurveTo(0, -0.62, -1.5, -0.32);
         const hull = new Mesh(
-          new BoxGeometry(LEDGE_WIDTH * 0.62, 0.8, LEDGE_DEPTH * 0.8),
-          new MeshStandardMaterial({ color: 0x2a2419, roughness: 1 }),
+          new ExtrudeGeometry(hullShape, {
+            depth: LEDGE_DEPTH * 0.72,
+            bevelEnabled: true,
+            bevelThickness: 0.06,
+            bevelSize: 0.05,
+            bevelSegments: 1,
+            curveSegments: 8,
+          }),
+          new MeshStandardMaterial({ color: 0x2f2a1c, roughness: 1, flatShading: true }),
         );
-        hull.position.set(0.2, -0.05, 0);
-        hull.rotation.z = -0.09;
+        hull.position.set(0.2, -0.02, -LEDGE_DEPTH * 0.36);
+        hull.rotation.z = -0.07;
         group.add(hull);
 
+        for (let rib = -1; rib <= 1; rib++) {
+          const timber = new Mesh(
+            new BoxGeometry(0.09, 0.82, LEDGE_DEPTH * 0.78),
+            new MeshStandardMaterial({ color: 0x413826, roughness: 1 }),
+          );
+          timber.position.set(0.2 + rib * 0.85, 0.06, 0);
+          timber.rotation.z = -0.07;
+          group.add(timber);
+        }
+
         const glow = new Mesh(
-          new BoxGeometry(LEDGE_WIDTH * 0.4, 0.22, 0.9),
-          new MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.8 }),
+          new BoxGeometry(LEDGE_WIDTH * 0.36, 0.16, 0.7),
+          new MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.55 }),
         );
-        glow.position.set(0.2, 0.42, 0.35);
+        glow.position.set(0.2, 0.5, 0.3);
         group.add(glow);
 
         const stash = new Sprite(new SpriteMaterial({ depthWrite: false, fog: false }));
