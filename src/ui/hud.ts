@@ -1,4 +1,5 @@
 import { standings, type GameState, type LegalDescend } from '../rules/index.js';
+import type { Lesson } from './coach.js';
 import { PLAYER_CSS } from '../render/palette.js';
 
 export interface PayOption {
@@ -21,6 +22,8 @@ export class Hud {
   private options = el('options');
   private logBox = el('log');
   private endBox = el('end');
+  private coach = el('coach');
+  private coachTimer = 0;
 
   renderState(state: GameState, humanSeats: number[]): void {
     this.players.innerHTML = '';
@@ -42,6 +45,30 @@ export class Hud {
       `<span>turn ${state.turn}</span><span>deck ${state.deck.length}</span>` +
       `<span>${open}/${state.trenches.length} trenches open</span>` +
       (state.endTriggeredBy !== null ? `<span class="warn">final round</span>` : '');
+  }
+
+  /** Show one tutorial lesson. Non-sticky lessons fade out on their own. */
+  showCoach(lesson: Lesson, onDismiss: () => void): void {
+    el('coachTitle').textContent = lesson.title;
+    el('coachText').innerHTML = lesson.body;
+    this.coach.classList.add('show');
+
+    const dismiss = () => {
+      this.hideCoach();
+      onDismiss();
+    };
+    const ok = el<HTMLButtonElement>('coachOk');
+    ok.onclick = dismiss;
+
+    window.clearTimeout(this.coachTimer);
+    if (!lesson.sticky) {
+      this.coachTimer = window.setTimeout(dismiss, 15000);
+    }
+  }
+
+  hideCoach(): void {
+    window.clearTimeout(this.coachTimer);
+    this.coach.classList.remove('show');
   }
 
   setPrompt(html: string): void {

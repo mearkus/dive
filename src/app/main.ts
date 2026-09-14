@@ -10,6 +10,7 @@ import { createStage, detectQuality } from '../render/stage.js';
 import { configureLayout } from '../render/layout.js';
 import { GameScene } from '../render/scene.js';
 import { Hud } from '../ui/hud.js';
+import { Coach } from '../ui/coach.js';
 import { Controller } from './controller.js';
 
 function element<T extends HTMLElement>(id: string): T {
@@ -38,11 +39,31 @@ function begin(): void {
   const stage = createStage(canvas, state.trenches.length, maxDepth, quality);
   const scene = new GameScene(stage, state, quality);
   const hud = new Hud();
-  const controller = new Controller(stage, scene, hud, { players, humanSeats, seed, difficulty }, state);
+  const tips = element<HTMLInputElement>('tips').checked;
+  const controller = new Controller(
+    stage,
+    scene,
+    hud,
+    { players, humanSeats, seed, difficulty },
+    state,
+    new Coach(tips),
+  );
 
   element('intro').classList.add('hide');
   stage.start();
   controller.start();
+}
+
+// Offer a reset only to someone who has actually seen tips before.
+const replay = element<HTMLButtonElement>('replayTips');
+if (Coach.anySeen()) {
+  replay.hidden = false;
+  replay.addEventListener('click', () => {
+    Coach.reset();
+    element<HTMLInputElement>('tips').checked = true;
+    replay.textContent = 'Tips reset';
+    replay.disabled = true;
+  });
 }
 
 element('begin').addEventListener('click', begin, { once: true });

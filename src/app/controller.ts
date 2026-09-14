@@ -12,6 +12,7 @@ import { narrate } from '../common/describe.js';
 import { GameScene } from '../render/scene.js';
 import type { Stage } from '../render/stage.js';
 import { Hud, type PayOption } from '../ui/hud.js';
+import { Coach, type CoachContext, type Phase } from '../ui/coach.js';
 
 export interface MatchOptions {
   players: number;
@@ -29,6 +30,8 @@ export class Controller {
   private bots: Policy[];
   private selected: LegalDescend | null = null;
   private locked = false;
+  private coach: Coach;
+  private coachVisible = false;
 
   constructor(
     private stage: Stage,
@@ -36,8 +39,10 @@ export class Controller {
     private hud: Hud,
     private options: MatchOptions,
     initial: GameState,
+    coach?: Coach,
   ) {
     this.state = initial;
+    this.coach = coach ?? new Coach(false);
     this.bots = Array.from({ length: options.players }, (_, i) =>
       options.difficulty === 'search'
         ? search({ samples: 5, horizon: 8, seed: 700 + i })
@@ -83,6 +88,33 @@ export class Controller {
     return legalDescends(this.state);
   }
 
+  /**
+   * Offer the tutorial a moment to teach. At most one lesson is on screen at a
+   * time, so a lesson raised by the last action is not trampled by the next
+   * turn starting.
+   */
+  private teach(phase: Phase, extra: Partial<CoachContext> = {}): void {
+    if (this.coachVisible && phase !== 'selected') return;
+    const lesson = this.coach.next({
+      state: this.state,
+      phase,
+      humanSeats: this.options.humanSeats,
+      legal: this.isHumanTurn() ? legalDescends(this.state) : [],
+      ...extra,
+    });
+    if (!lesson) return;
+    this.hideCoach();
+    this.coachVisible = true;
+    this.hud.showCoach(lesson, () => {
+      this.coachVisible = false;
+    });
+  }
+
+  private hideCoach(): void {
+    this.coachVisible = false;
+    this.hud.hideCoach();
+  }
+
   private sync(): void {
     this.hud.renderState(this.state, this.options.humanSeats);
     const legal = this.myLegalDescends();
@@ -105,11 +137,13 @@ export class Controller {
         // The pressure valve: nothing is affordable, so the turn is spent on air.
         this.hud.setPrompt('<span class="warn">Nothing you can pay for — surfacing for air.</span>');
         this.hud.clearOptions();
+        this.teach('turn-start');
         window.setTimeout(() => this.dispatch({ kind: 'refresh' }), 900);
         return;
       }
       this.hud.setPrompt('Your dive — click one of your divers, or a glowing ledge.');
       this.hud.clearOptions();
+      this.teach('turn-start');
       return;
     }
 
@@ -128,6 +162,7 @@ export class Controller {
     if (this.locked) return;
     this.locked = true;
     this.clearSelection();
+    this.hideCoach();
 
     const before = this.state;
     const result = apply(before, action);
@@ -138,6 +173,7 @@ export class Controller {
 
     this.state = result.state;
     this.hud.renderState(this.state, this.options.humanSeats);
+    this.teach('after-action', { events: result.events });
     this.scene.play(this.state, result.events, () => {
       this.locked = false;
       this.sync();
@@ -193,6 +229,7 @@ export class Controller {
 
   private choose(descend: LegalDescend): void {
     this.selected = descend;
+    this.teach('selected', { selected: descend });
     this.scene.highlightDiver(descend.diver);
     this.hud.setPrompt(this.hud.describeTarget(descend, this.state));
 
