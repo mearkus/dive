@@ -101,6 +101,7 @@ html, body {
 }
 #rules.show { display: grid; }
 #rules h4 { margin: 16px 0 5px; font-size: 13px; color: var(--teal); text-transform: uppercase; letter-spacing: .07em; }
+#rules p.spaced { margin-top: 9px; }
 #rules p { margin: 0; font-size: 14px; line-height: 1.6; color: #cfe9f4; }
 #rules b.lit { color: var(--teal); }
 

@@ -599,6 +599,22 @@ still reading the board — reported as "where is the tutorial?" by the first
 person to play it, on a build where it had in fact fired correctly. Lessons
 now wait to be dismissed, or until the player moves.
 
+**"Sometimes it fires, sometimes it doesn't."** The second person-report on the
+line rule, and the rule was working perfectly — the wording hid half of it.
+"Everyone stacked above you" is only true of divers that arrived on that ledge
+*after* yours, and entering a trench always puts you on top of whoever is
+already there, so a diver that just moved in tows nobody. Worse, "above" was a
+vertical metaphor for something drawn as a flat horizontal row, so it had no
+visual referent at all.
+
+Three changes, because this is the mechanic the whole game rests on: the rule
+is now phrased as "everyone who landed there after you" with the consequence
+spelled out (first in tows everyone, last in tows nobody); the move prompt
+names the empty case explicitly — *tows nobody, you are last onto this ledge* —
+rather than silently omitting it; and each later arrival now sits slightly
+higher on the ledge, so the rope slopes and "after you" finally reads as
+"above you" on the board.
+
 **And the rules must stay reachable.** The same session produced two questions
 the game could not answer for itself — why the ledge numbers look random, and
 how the playable ones are chosen. A `?` button now opens a rules card from

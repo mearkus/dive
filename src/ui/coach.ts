@@ -64,8 +64,8 @@ export const LESSONS: Lesson[] = [
     id: 'carry',
     title: 'They ride for free',
     body:
-      'Divers sharing a ledge are clipped to one line, so the ones stacked <b>above</b> you come down with you — ' +
-      'and pay nothing. Every descent you buy is partly a gift. Sometimes it is still worth it.',
+      'Everyone who landed on this ledge <b>after</b> your diver is clipped in behind it, and comes down free. ' +
+      'Arrive first and you tow them all; arrive last and you tow nobody. Sometimes the tow is still worth it.',
     weight: 100,
     sticky: true,
     when: (c) => c.phase === 'selected' && (c.selected?.riders.length ?? 0) > 0,
@@ -74,8 +74,8 @@ export const LESSONS: Lesson[] = [
     id: 'leech',
     title: 'Or hitch a ride yourself',
     body:
-      'That ledge already has a diver on it. Land on top and you are clipped in above them — ' +
-      'every descent <b>they</b> pay for from now on drags you down too, for nothing.',
+      'That ledge already has a diver on it, and arriving puts you <b>on top</b> of them — so you tow nobody, ' +
+      'and every descent <b>they</b> pay for from now on drags you down free.',
     weight: 40,
     when: (c) =>
       c.phase === 'turn-start' &&

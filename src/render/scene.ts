@@ -118,7 +118,10 @@ export class GameScene {
       if (view) view.group.scale.setScalar(crowd > 4 ? 1.05 : crowd > 2 ? 1.25 : 1.45);
       return new Vector3(
         trenchX(trench.id, count) + diverSlotX(slot, crowd),
-        ledgeY(diver.pos.ledge) + 0.18,
+        // Each later arrival rides a little higher on the line, so "landed
+        // after you" reads as "above you" on the board — the rule is written
+        // that way, and a flat row gave it no visual meaning at all.
+        ledgeY(diver.pos.ledge) + 0.18 + Math.min(slot, 4) * 0.14,
         // Alternate front/back so neighbouring badges never sit flush.
         LEDGE_DEPTH * 0.1 + (slot % 2) * 0.62,
       );
@@ -177,8 +180,12 @@ export class GameScene {
       const line = ledge.line;
       if (stack.length > 1) {
         const spread = Math.abs(diverSlotX(stack.length - 1, stack.length) - diverSlotX(0, stack.length));
+        const rise = Math.min(stack.length - 1, 4) * 0.14;
         line.visible = true;
-        line.scale.x = Math.max(0.3, spread + 0.5);
+        line.scale.x = Math.max(0.3, Math.hypot(spread, rise) + 0.5);
+        // Slope the rope to follow the divers it runs through.
+        line.rotation.z = Math.atan2(rise, Math.max(0.001, spread));
+        line.position.y = 0.34 + rise / 2;
       } else {
         line.visible = false;
       }
