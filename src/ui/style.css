@@ -58,7 +58,7 @@ html, body {
   gap: 0 8px;
   align-items: center;
   padding: 8px 12px;
-  min-width: 104px;
+  min-width: 92px;
   background: var(--panel);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
@@ -76,7 +76,7 @@ html, body {
 }
 .player .who { grid-area: who; font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; }
 .player .score { grid-area: score; font-size: 20px; font-weight: 700; line-height: 1; }
-.player .sub { grid-area: sub; font-size: 11px; color: var(--dim); margin-top: 4px; }
+.player .sub { grid-area: sub; font-size: 10.5px; color: var(--dim); margin-top: 3px; white-space: nowrap; }
 
 .meta-row { display: flex; gap: 8px; align-items: flex-start; }
 #help {
@@ -191,7 +191,18 @@ html, body {
   box-shadow: 0 2px 5px rgba(0, 0, 0, .45), inset 0 0 0 1px rgba(255, 255, 255, .06);
   transition: transform .12s ease, box-shadow .12s ease;
 }
-.card .big { font-size: 25px; line-height: 1; }
+.card .big { font-size: 25px; line-height: 1; margin-bottom: 9px; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
+
+/* Value as a lungful of air. */
+.card .bubbles {
+  position: absolute; left: 0; right: 0; bottom: 6px;
+  display: flex; justify-content: center; gap: 2.5px;
+}
+.card .bubbles i {
+  width: 4.5px; height: 4.5px; border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, #ffffff, #7fe4ff 55%, #2f9fc4);
+  box-shadow: 0 0 3px rgba(150, 235, 255, .6);
+}
 .card .idx {
   position: absolute; top: 3px; left: 5px;
   font-size: 10px; font-weight: 700; opacity: .72;
@@ -322,7 +333,9 @@ html, body {
   #coach p { font-size: 12.5px; }
   #handRow { gap: 12px; }
   .card { width: 34px; height: 48px; }
-  .card .big { font-size: 19px; }
+  .card .big { font-size: 19px; margin-bottom: 7px; }
+  .card .bubbles i { width: 3.5px; height: 3.5px; }
+  .card .bubbles { gap: 2px; bottom: 5px; }
   .card .idx { font-size: 8px; top: 2px; left: 3px; }
   .pile-art { width: 30px; height: 42px; }
   .pile-art.spent b { font-size: 15px; }
@@ -350,7 +363,9 @@ html, body {
   #handRow { gap: 7px; }
   #hand { min-height: 0; }
   .card { width: 28px; height: 40px; border-radius: 5px; }
-  .card .big { font-size: 16px; }
+  .card .big { font-size: 16px; margin-bottom: 6px; }
+  .card .bubbles i { width: 3px; height: 3px; }
+  .card .bubbles { gap: 1.5px; bottom: 4px; }
   .card .idx { display: none; }
   .pile-art { width: 25px; height: 36px; }
   .pile-art.spent b { font-size: 13px; }

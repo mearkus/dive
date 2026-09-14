@@ -194,7 +194,7 @@ export function waterBackdrop(): Texture {
   return tex;
 }
 
-/** Remaining treasure on a wreck: big gold digits, richest first. */
+/** Remaining treasure on a wreck, drawn as a row of coins, richest first. */
 export function treasurePlate(values: number[]): Texture {
   const key = `loot:${values.join('-')}`;
   const hit = cache.get(key);
@@ -203,25 +203,61 @@ export function treasurePlate(values: number[]): Texture {
   const W = 512;
   const H = 150;
   const [c, ctx] = canvas(W, H);
-  ctx.beginPath();
-  ctx.roundRect(5, 5, W - 10, H - 10, 20);
-  ctx.fillStyle = values.length ? 'rgba(46,32,6,0.92)' : 'rgba(20,26,30,0.8)';
-  ctx.fill();
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = values.length ? 'rgba(255,201,77,0.75)' : 'rgba(120,150,165,0.3)';
-  ctx.stroke();
 
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
   if (!values.length) {
+    ctx.beginPath();
+    ctx.roundRect(5, 5, W - 10, H - 10, 20);
+    ctx.fillStyle = 'rgba(18,26,30,0.82)';
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = 'rgba(120,150,165,0.32)';
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     ctx.fillStyle = '#7d9aa8';
-    ctx.font = '600 58px ui-sans-serif, system-ui, sans-serif';
+    ctx.font = '600 56px ui-sans-serif, system-ui, sans-serif';
     ctx.fillText('stripped', W / 2, H / 2);
-  } else {
-    ctx.fillStyle = '#ffc94d';
-    ctx.font = `800 ${values.length > 3 ? 76 : 88}px ui-sans-serif, system-ui, sans-serif`;
-    ctx.fillText(values.join('  '), W / 2, H / 2 + 4);
+    const tex = finish(c);
+    cache.set(key, tex);
+    return tex;
   }
+
+  const radius = Math.min(56, (W - 40) / (values.length * 2.25));
+  const step = radius * 2.18;
+  const startX = W / 2 - (step * (values.length - 1)) / 2;
+
+  values.forEach((value, i) => {
+    const x = startX + i * step;
+    const y = H / 2;
+
+    // Coin edge, struck face, rim. Leftmost is richest — what the next diver
+    // to reach the floor actually takes.
+    ctx.beginPath();
+    ctx.arc(x, y + radius * 0.12, radius, 0, Math.PI * 2);
+    ctx.fillStyle = '#6b4c0d';
+    ctx.fill();
+
+    const face = ctx.createRadialGradient(x - radius * 0.35, y - radius * 0.4, radius * 0.1, x, y, radius);
+    face.addColorStop(0, '#ffe9a8');
+    face.addColorStop(0.55, '#f0bb43');
+    face.addColorStop(1, '#a97a14');
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = face;
+    ctx.fill();
+
+    ctx.lineWidth = Math.max(2, radius * 0.11);
+    ctx.strokeStyle = 'rgba(255, 246, 208, 0.75)';
+    ctx.beginPath();
+    ctx.arc(x, y, radius * 0.82, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = '#4a3206';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `800 ${radius * (value > 9 ? 0.9 : 1.15)}px ui-sans-serif, system-ui, sans-serif`;
+    ctx.fillText(String(value), x, y + radius * 0.04);
+  });
 
   const tex = finish(c);
   cache.set(key, tex);

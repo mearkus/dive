@@ -650,6 +650,37 @@ opponent's cards were on screen for the whole of their turn. The hand now
 always renders the viewer's own seat (`humanSeats[0]`, falling back to the
 current player in watch mode, where there is nothing to hide).
 
+## 11f. Art direction pass
+
+Asked for on visuals alone: meeples, thematic trenches, thematic card values,
+thematic treasure.
+
+- **Divers are meeples.** The classic silhouette — round head, arms out,
+  flared base — drawn once as a 2D outline and extruded, with a tank on the
+  back and a mask across the face. A board game piece, not a model of a
+  person: the shape has to read at thirty pixels tall, and a capsule never did.
+- **Trenches are rock.** Ledges are irregular extruded slabs with flat
+  shading rather than boxes, seeded per trench and ledge so no two shelves
+  match; coral nubs cling to each one; a fringe of kelp rings the mouth of
+  every shaft; and the wreck is a broken hull with ribs instead of a crate.
+- **Card values are air.** Each card carries its number as a row of bubbles
+  beneath the numeral. The numeral stays for legibility at phone sizes — the
+  bubbles say what the number *is*.
+- **Treasure is coins.** Struck gold discs with rims and values, richest
+  first, rather than a row of gold digits.
+
+Two framing bugs fell out of this, both from constants standing in for
+measurements:
+
+- The card tray grew when the deck and discard piles were added, and quietly
+  pushed the deepest trench behind it. A `ResizeObserver` on the chrome now
+  re-frames the camera when the UI changes size, not only when the window does.
+- Fitting the board to a "usable" fraction of the viewport still centred it on
+  the whole canvas, so the tray — far taller than the HUD — ate the bottom of
+  the board. The camera now centres on the band the UI actually leaves visible,
+  and the board's vertical extent is derived from where things really are
+  (nameplate top, treasure below the deepest wreck) instead of a magic number.
+
 ## 12. Stretch ideas (post-v1, keep out of the way for now)
 
 - **Current cards**: an event deck that reshuffles ledge costs mid-game.

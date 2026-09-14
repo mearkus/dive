@@ -1,13 +1,14 @@
 import {
-  CapsuleGeometry,
+  BoxGeometry,
   Color,
   ConeGeometry,
   CylinderGeometry,
+  ExtrudeGeometry,
   Group,
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
-  SphereGeometry,
+  Shape,
   Sprite,
   SpriteMaterial,
   Vector3,
@@ -27,10 +28,43 @@ export interface DiverView {
   surfaced: boolean;
 }
 
-const BODY = new CapsuleGeometry(0.19, 0.34, 4, 10);
-const TANK = new CylinderGeometry(0.08, 0.08, 0.32, 8);
-const MASK = new SphereGeometry(0.115, 10, 8);
-const FIN = new ConeGeometry(0.12, 0.26, 6);
+/**
+ * The classic meeple silhouette — round head, arms out, flared base — drawn
+ * once as a 2D outline and extruded. A board game piece, not a model of a
+ * person: the shape has to read at 30 pixels tall.
+ */
+function meepleShape(): Shape {
+  const s = new Shape();
+  s.moveTo(-0.45, 0);
+  s.lineTo(-0.29, 0.33);
+  s.quadraticCurveTo(-0.53, 0.35, -0.50, 0.50);
+  s.quadraticCurveTo(-0.48, 0.61, -0.29, 0.58);
+  s.quadraticCurveTo(-0.20, 0.58, -0.17, 0.66);
+  // Over the top of the head, clockwise from the left shoulder to the right.
+  s.absarc(0, 0.80, 0.205, 3.82, -0.68, true);
+  s.quadraticCurveTo(0.20, 0.58, 0.29, 0.58);
+  s.quadraticCurveTo(0.48, 0.61, 0.50, 0.50);
+  s.quadraticCurveTo(0.53, 0.35, 0.29, 0.33);
+  s.lineTo(0.45, 0);
+  s.closePath();
+  return s;
+}
+
+const BODY = new ExtrudeGeometry(meepleShape(), {
+  depth: 0.26,
+  bevelEnabled: true,
+  bevelThickness: 0.045,
+  bevelSize: 0.04,
+  bevelSegments: 2,
+  curveSegments: 12,
+});
+// Stand it up on the ledge, centred, and size it like the old capsule.
+BODY.translate(0, -0.44, -0.13);
+BODY.scale(0.82, 0.82, 0.82);
+
+const TANK = new CylinderGeometry(0.075, 0.075, 0.3, 8);
+const MASK = new BoxGeometry(0.3, 0.1, 0.1);
+const FIN = new ConeGeometry(0.12, 0.24, 6);
 const LAMP = new ConeGeometry(0.3, 1.5, 10, 1, true);
 
 export function buildDiver(id: string, owner: number): DiverView {
@@ -41,22 +75,21 @@ export function buildDiver(id: string, owner: number): DiverView {
 
   const suit = new Mesh(
     BODY,
-    new MeshStandardMaterial({ color: new Color(color), roughness: 0.55, metalness: 0.1 }),
+    new MeshStandardMaterial({ color: new Color(color), roughness: 0.45, metalness: 0.08 }),
   );
-  suit.rotation.x = 0.22;
   group.add(suit);
 
-  const tank = new Mesh(TANK, new MeshStandardMaterial({ color: 0x9aa7ad, roughness: 0.5, metalness: 0.5 }));
-  tank.position.set(0, 0.02, -0.2);
-  tank.rotation.x = 0.22;
+  // A meeple, but a diving one: tank on the back, mask across the face.
+  const tank = new Mesh(TANK, new MeshStandardMaterial({ color: 0xa9b6bc, roughness: 0.4, metalness: 0.6 }));
+  tank.position.set(0, 0.02, -0.17);
   group.add(tank);
 
-  const mask = new Mesh(MASK, new MeshStandardMaterial({ color: 0x0d2b36, roughness: 0.2, metalness: 0.3 }));
-  mask.position.set(0, 0.3, 0.07);
+  const mask = new Mesh(MASK, new MeshStandardMaterial({ color: 0x081d26, roughness: 0.15, metalness: 0.4 }));
+  mask.position.set(0, 0.22, 0.12);
   group.add(mask);
 
   const fin = new Mesh(FIN, new MeshStandardMaterial({ color: new Color(color), roughness: 0.7 }));
-  fin.position.set(0, -0.37, -0.1);
+  fin.position.set(0, -0.4, -0.12);
   fin.rotation.x = Math.PI;
   group.add(fin);
 
