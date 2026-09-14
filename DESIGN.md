@@ -593,6 +593,18 @@ carried**, hitching onto a rival, the wreck coming into reach, a trench being
 stripped, a forced refresh, and the final round. Decision-moment lessons are
 sticky — they stay while the payment panel is open; the rest time out.
 
+**A lesson must not time out.** The first version dismissed non-sticky lessons
+after 15 seconds, which quietly ate the opening lesson while the player was
+still reading the board — reported as "where is the tutorial?" by the first
+person to play it, on a build where it had in fact fired correctly. Lessons
+now wait to be dismissed, or until the player moves.
+
+**And the rules must stay reachable.** The same session produced two questions
+the game could not answer for itself — why the ledge numbers look random, and
+how the playable ones are chosen. A `?` button now opens a rules card from
+anywhere in the game. A tutorial that only fires once cannot be the only place
+the cost model is explained.
+
 Notes for anyone extending it:
 
 - The opening lesson cannot key off `state.turn`. The start player is random,

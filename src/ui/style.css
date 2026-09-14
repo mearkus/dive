@@ -78,6 +78,32 @@ html, body {
 .player .score { grid-area: score; font-size: 20px; font-weight: 700; line-height: 1; }
 .player .sub { grid-area: sub; font-size: 11px; color: var(--dim); margin-top: 4px; }
 
+.meta-row { display: flex; gap: 8px; align-items: flex-start; }
+#help {
+  flex: none;
+  width: 34px; height: 34px;
+  font: inherit; font-size: 17px; font-weight: 700;
+  color: var(--teal);
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 50%;
+  cursor: pointer;
+}
+#help:hover { background: rgba(29, 107, 131, .95); }
+
+#rules {
+  position: fixed; inset: 0;
+  display: none; place-items: center;
+  padding: 16px;
+  background: rgba(3, 14, 20, .86);
+  backdrop-filter: blur(4px);
+  z-index: 12;
+}
+#rules.show { display: grid; }
+#rules h4 { margin: 16px 0 5px; font-size: 13px; color: var(--teal); text-transform: uppercase; letter-spacing: .07em; }
+#rules p { margin: 0; font-size: 14px; line-height: 1.6; color: #cfe9f4; }
+#rules b.lit { color: var(--teal); }
+
 #meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--dim); padding: 8px 12px; background: var(--panel); border-radius: 12px; }
 #meta .warn { color: var(--warn); font-weight: 700; }
 
@@ -245,6 +271,7 @@ html, body {
   .player .dot { width: 24px; height: 24px; font-size: 13px; }
   .player .score { font-size: 16px; }
   #meta { padding: 5px 9px; font-size: 11px; }
+  #help { width: 28px; height: 28px; font-size: 14px; }
   #log { max-height: 17vh; font-size: 11px; padding: 6px 9px; }
   #tray { padding: 7px; gap: 6px; }
   #coach { padding: 7px 10px; margin-bottom: 2px; }

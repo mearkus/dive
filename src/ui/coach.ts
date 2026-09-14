@@ -29,7 +29,7 @@ export interface Lesson {
   body: string;
   /** Higher wins when several lessons match the same moment. */
   weight: number;
-  /** Stay until the player acts, rather than timing out — for decision moments. */
+  /** Reserved for decision-moment lessons; every lesson now waits to be dismissed. */
   sticky?: boolean;
   when(context: CoachContext): boolean;
 }
