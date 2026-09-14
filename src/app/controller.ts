@@ -3,6 +3,7 @@ import {
   legalDescends,
   newGame,
   type Action,
+  type GameEvent,
   type GameState,
   type LegalDescend,
 } from '../rules/index.js';
@@ -13,6 +14,7 @@ import { GameScene } from '../render/scene.js';
 import type { Stage } from '../render/stage.js';
 import { Hud, type PayOption } from '../ui/hud.js';
 import { Coach, type CoachContext, type Phase } from '../ui/coach.js';
+import type { Sfx } from '../ui/audio.js';
 
 export interface MatchOptions {
   players: number;
@@ -40,6 +42,7 @@ export class Controller {
     private options: MatchOptions,
     initial: GameState,
     coach?: Coach,
+    private sfx?: Sfx,
   ) {
     this.state = initial;
     this.coach = coach ?? new Coach(false);
@@ -108,6 +111,39 @@ export class Controller {
     this.hud.showCoach(lesson, () => {
       this.coachVisible = false;
     });
+  }
+
+  /**
+   * Sound, driven off the same ordered event list the renderer animates, so a
+   * cue can never disagree with what is on screen.
+   */
+  private cue(events: GameEvent[]): void {
+    if (!this.sfx) return;
+    for (const event of events) {
+      switch (event.t) {
+        case 'cards-spent':
+          this.sfx.spend(event.values.length);
+          break;
+        case 'stack-moved':
+          this.sfx.descend(event.divers.length - 1);
+          window.setTimeout(() => this.sfx?.land(), 420);
+          break;
+        case 'treasure-taken':
+          if (event.value > 0) this.sfx.treasure(event.value);
+          break;
+        case 'divers-recalled':
+          this.sfx.abort();
+          break;
+        case 'trench-closed':
+          this.sfx.closed();
+          break;
+        case 'hand-refilled':
+          if (event.player === this.viewSeat) this.sfx.deal(event.drawn.length);
+          break;
+        default:
+          break;
+      }
+    }
   }
 
   private hideCoach(): void {
@@ -196,6 +232,7 @@ export class Controller {
     this.state = result.state;
     this.hud.renderState(this.state, this.options.humanSeats);
     this.teach('after-action', { events: result.events });
+    this.cue(result.events);
     this.scene.play(this.state, result.events, () => {
       this.locked = false;
       this.sync();

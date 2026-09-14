@@ -79,7 +79,7 @@ html, body {
 .player .sub { grid-area: sub; font-size: 10.5px; color: var(--dim); margin-top: 3px; white-space: nowrap; }
 
 .meta-row { display: flex; gap: 8px; align-items: flex-start; }
-#help {
+#help, #mute {
   flex: none;
   width: 34px; height: 34px;
   font: inherit; font-size: 17px; font-weight: 700;
@@ -89,7 +89,8 @@ html, body {
   border-radius: 50%;
   cursor: pointer;
 }
-#help:hover { background: rgba(29, 107, 131, .95); }
+#help:hover, #mute:hover { background: rgba(29, 107, 131, .95); }
+#mute.off { color: var(--dim); text-decoration: line-through; }
 
 #rules {
   position: fixed; inset: 0;
@@ -353,7 +354,7 @@ html, body {
   .player .dot { width: 24px; height: 24px; font-size: 13px; }
   .player .score { font-size: 16px; }
   #meta { padding: 5px 9px; font-size: 11px; }
-  #help { width: 28px; height: 28px; font-size: 14px; }
+  #help, #mute { width: 28px; height: 28px; font-size: 14px; }
   #log { max-height: 17vh; font-size: 11px; padding: 6px 9px; }
   #tray { padding: 7px; gap: 6px; }
   #coach { padding: 7px 10px; margin-bottom: 2px; }
