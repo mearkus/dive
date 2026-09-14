@@ -14,7 +14,10 @@
     <div id="ui">
       <header id="hud">
         <div id="players"></div>
-        <div id="meta"></div>
+        <div class="meta-row">
+          <div id="meta"></div>
+          <button id="help" type="button" aria-label="How to play">?</button>
+        </div>
       </header>
 
       <aside id="log" aria-live="polite"></aside>
@@ -35,6 +38,50 @@
     </div>
 
     <div id="end"></div>
+
+    <div id="rules">
+      <div class="panel">
+        <h2>How to play</h2>
+
+        <h4>The numbers on the ledges</h4>
+        <p>
+          A ledge's number is what it <b>costs in air</b> to move onto it. They are rolled fresh
+          every game: ledge 1 is always 1–2, the middle of a trench runs 2–5, and the bottom
+          third runs 3–6 — the floor is never cheap. So each board is a different route to plan.
+        </p>
+
+        <h4>Paying for a move</h4>
+        <p>
+          You hold 5 air cards, refilled after every move. To drop a diver one ledge, discard any
+          combination summing to that ledge's number <b>exactly</b> — no overpaying. A ledge
+          <b class="lit">glows</b> when your current hand can pay it. If nothing is payable, your
+          turn is spent swapping the whole hand for a fresh one.
+        </p>
+
+        <h4>The line — this is the game</h4>
+        <p>
+          Divers sharing a ledge are clipped to one line. When you descend, <b>every diver stacked
+          above yours comes with you, free</b>. So each move you pay for is partly a gift to a
+          rival — and landing on top of someone is the cheapest way down, if they keep moving.
+        </p>
+
+        <h4>Treasure, and running out of it</h4>
+        <p>
+          The first diver to a trench floor takes the richest token; later arrivals take what is
+          left. When the last token goes, the trench is stripped — it closes, and
+          <b>every diver still inside surfaces with nothing</b>, wasting every card spent getting
+          there.
+        </p>
+
+        <h4>Winning</h4>
+        <p>
+          The game ends when someone surfaces their last diver; everyone gets one final turn.
+          Divers still in the water score <b>nothing</b>. Most treasure wins.
+        </p>
+
+        <button id="rulesClose" type="button">Back to the dive</button>
+      </div>
+    </div>
 
     <div id="intro">
       <div class="panel">

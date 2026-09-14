@@ -66,4 +66,16 @@ if (Coach.anySeen()) {
   });
 }
 
+// The rules stay one tap away for the whole game — the cost/payment model is
+// not something a player should have to remember from an intro screen.
+const rules = element('rules');
+element('help').addEventListener('click', () => rules.classList.add('show'));
+element('rulesClose').addEventListener('click', () => rules.classList.remove('show'));
+rules.addEventListener('click', (e) => {
+  if (e.target === rules) rules.classList.remove('show');
+});
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') rules.classList.remove('show');
+});
+
 element('begin').addEventListener('click', begin, { once: true });

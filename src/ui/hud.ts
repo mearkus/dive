@@ -23,7 +23,6 @@ export class Hud {
   private logBox = el('log');
   private endBox = el('end');
   private coach = el('coach');
-  private coachTimer = 0;
 
   renderState(state: GameState, humanSeats: number[]): void {
     this.players.innerHTML = '';
@@ -47,7 +46,11 @@ export class Hud {
       (state.endTriggeredBy !== null ? `<span class="warn">final round</span>` : '');
   }
 
-  /** Show one tutorial lesson. Non-sticky lessons fade out on their own. */
+  /**
+   * Show one tutorial lesson. It stays until the player dismisses it or makes
+   * a move — an earlier version timed out after 15 seconds, which quietly ate
+   * the opening lesson while the player was still reading the board.
+   */
   showCoach(lesson: Lesson, onDismiss: () => void): void {
     el('coachTitle').textContent = lesson.title;
     el('coachText').innerHTML = lesson.body;
@@ -60,14 +63,9 @@ export class Hud {
     const ok = el<HTMLButtonElement>('coachOk');
     ok.onclick = dismiss;
 
-    window.clearTimeout(this.coachTimer);
-    if (!lesson.sticky) {
-      this.coachTimer = window.setTimeout(dismiss, 15000);
-    }
   }
 
   hideCoach(): void {
-    window.clearTimeout(this.coachTimer);
     this.coach.classList.remove('show');
   }
 

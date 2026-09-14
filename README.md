@@ -30,7 +30,8 @@ Click one of your divers, or any glowing ledge, then pick which cards to spend
 — every exact-sum combination is offered, and hovering one shows what it costs
 you. A ledge holding other divers means they ride down with you for free.
 
-First-timers get **tutorial tips**: short prompts that appear the first time
+A **?** button opens the rules from anywhere in the game. First-timers also get
+**tutorial tips**: short prompts that appear the first time
 each situation comes up — most importantly the moment you are about to carry a
 rival down for free. Each appears once and is remembered; turn them off, or
 reset them, on the intro screen.
