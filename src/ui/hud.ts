@@ -23,6 +23,8 @@ export class Hud {
   private logBox = el('log');
   private endBox = el('end');
   private coach = el('coach');
+  /** Last hand rendered, so a re-render can tell which cards are newly drawn. */
+  private lastHand: number[] = [];
 
   renderState(state: GameState, humanSeats: number[]): void {
     this.players.innerHTML = '';
@@ -41,7 +43,7 @@ export class Hud {
 
     const open = state.trenches.filter((t) => !t.closed).length;
     this.meta.innerHTML =
-      `<span>turn ${state.turn}</span><span>deck ${state.deck.length}</span>` +
+      `<span>turn ${state.turn}</span>` +
       `<span>${open}/${state.trenches.length} trenches open</span>` +
       (state.endTriggeredBy !== null ? `<span class="warn">final round</span>` : '');
   }
@@ -73,15 +75,65 @@ export class Hud {
     this.prompt.innerHTML = html;
   }
 
-  /** The hand rail. `used` dims the cards a hovered payment would spend. */
+  /**
+   * The hand rail. `used` lifts the cards a hovered payment would spend.
+   * Cards that were not in the previous hand deal in from the deck, so it is
+   * visible where they came from.
+   */
   setHand(cards: number[], used: number[] = []): void {
-    this.hand.innerHTML = '';
-    cards.forEach((value, i) => {
-      const chip = document.createElement('span');
-      chip.className = `card${used.includes(i) ? ' used' : ''}`;
-      chip.textContent = String(value);
-      this.hand.appendChild(chip);
+    // Multiset diff against the last render: anything left over is newly drawn.
+    const previous = new Map<number, number>();
+    for (const value of this.lastHand) previous.set(value, (previous.get(value) ?? 0) + 1);
+
+    const isNew = cards.map((value) => {
+      const left = previous.get(value) ?? 0;
+      if (left > 0) {
+        previous.set(value, left - 1);
+        return false;
+      }
+      return true;
     });
+
+    this.hand.innerHTML = '';
+    let dealt = 0;
+    cards.forEach((value, i) => {
+      const card = document.createElement('span');
+      card.className = `card${used.includes(i) ? ' used' : ''}${isNew[i] ? ' dealt' : ''}`;
+      card.innerHTML = `<span class="idx">${value}</span><span class="big">${value}</span>`;
+      if (isNew[i]) card.style.animationDelay = `${dealt++ * 70}ms`;
+      this.hand.appendChild(card);
+    });
+    this.lastHand = [...cards];
+  }
+
+  /** Deck and discard counts, and the value on top of the discard. */
+  setPiles(deck: number, discard: number, top?: number): void {
+    el('deck').classList.toggle('empty', deck === 0);
+    el('discard').classList.toggle('empty', discard === 0);
+    el('deck').querySelector('.pile-count')!.textContent = String(deck);
+    el('discard').querySelector('.pile-count')!.textContent = String(discard);
+    el('discardTop').textContent = top === undefined ? '' : String(top);
+  }
+
+  /**
+   * Send the spent cards to the discard pile. Runs on the elements already on
+   * screen, before the hand is rebuilt, so the player sees which cards left.
+   */
+  spendCards(values: number[]): void {
+    const remaining = [...values];
+    const discardRect = el('discard').getBoundingClientRect();
+
+    for (const card of [...this.hand.children] as HTMLElement[]) {
+      const value = Number(card.querySelector('.big')?.textContent);
+      const at = remaining.indexOf(value);
+      if (at < 0) continue;
+      remaining.splice(at, 1);
+      const dx = discardRect.left + discardRect.width / 2 - (card.getBoundingClientRect().left + card.offsetWidth / 2);
+      card.style.setProperty('--dx', `${dx}px`);
+      card.classList.remove('used');
+      card.classList.add('spending');
+    }
+    // The hand is rebuilt by the next sync; nothing to clean up here.
   }
 
   setOptions(options: PayOption[], onHover: (indices: number[]) => void): void {

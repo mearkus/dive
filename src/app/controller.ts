@@ -115,11 +115,23 @@ export class Controller {
     this.hud.hideCoach();
   }
 
+  /** The seat whose cards the player is entitled to see. */
+  private get viewSeat(): number {
+    return this.options.humanSeats[0] ?? this.state.current;
+  }
+
   private sync(): void {
     this.hud.renderState(this.state, this.options.humanSeats);
     const legal = this.myLegalDescends();
     this.scene.refreshLedgePlates(this.state, legal);
-    this.hud.setHand(this.state.players[this.state.current].hand);
+    // Always the viewer's own hand. Showing state.current meant a bot's cards
+    // were on screen during its turn.
+    this.hud.setHand(this.state.players[this.viewSeat].hand);
+    this.hud.setPiles(
+      this.state.deck.length,
+      this.state.discard.length,
+      this.state.discard[this.state.discard.length - 1],
+    );
   }
 
   /** Hand the turn to whoever is next: prompt the human, or run a bot. */
@@ -166,6 +178,16 @@ export class Controller {
 
     const before = this.state;
     const result = apply(before, action);
+
+    // Fly the cards the viewer just spent into the discard, before the hand
+    // is rebuilt underneath them.
+    if (before.current === this.viewSeat) {
+      for (const event of result.events) {
+        if (event.t === 'cards-spent' || event.t === 'hand-discarded') {
+          this.hud.spendCards(event.values);
+        }
+      }
+    }
     for (const event of result.events) {
       const line = narrate(before, event);
       if (line) this.hud.log(line.text, line.tone);
@@ -257,7 +279,7 @@ export class Controller {
     if (this.isHumanTurn() && !this.locked) {
       this.hud.setPrompt('Your dive — click one of your divers, or a glowing ledge.');
       this.hud.clearOptions();
-      this.hud.setHand(this.state.players[this.state.current].hand);
+      this.hud.setHand(this.state.players[this.viewSeat].hand);
     }
   }
 }

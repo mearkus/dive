@@ -32,7 +32,19 @@
 
       <footer id="tray">
         <div id="prompt">Loading the dive…</div>
-        <div id="hand"></div>
+        <div id="handRow">
+          <div id="deck" class="pile" title="Air cards left to draw">
+            <span class="pile-art" aria-hidden="true"></span>
+            <span class="pile-count">—</span>
+            <span class="pile-label">deck</span>
+          </div>
+          <div id="hand"></div>
+          <div id="discard" class="pile" title="Spent air">
+            <span class="pile-art spent" aria-hidden="true"><b id="discardTop"></b></span>
+            <span class="pile-count">—</span>
+            <span class="pile-label">spent</span>
+          </div>
+        </div>
         <div id="options"></div>
       </footer>
     </div>

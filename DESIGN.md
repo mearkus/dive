@@ -631,6 +631,25 @@ Notes for anyone extending it:
 - Tips are off in `?watch=1`, and the intro carries an opt-out plus a reset
   that only appears once there is something to reset.
 
+## 11e. The card tray
+
+Reported as "the circled part are cards, but should be more obvious" — the
+hand rendered as five numbered tiles with no indication that they were cards,
+where they came from, or where they went.
+
+The tray is now **deck → hand → spent**, left to right. Cards carry a corner
+index and a card face; the deck is a face-down stack with its remaining count;
+the discard shows its count and the value on top. Spending flies the paid
+cards into the discard before the hand rebuilds, and their replacements deal
+in from the deck with a stagger. The economy is otherwise invisible: a player
+cannot reason about a 60-card deck they never see.
+
+Implementing this surfaced an unrelated bug worth recording. `sync()` rendered
+`state.current`'s hand — which during a bot's turn is **the bot's hand**. Every
+opponent's cards were on screen for the whole of their turn. The hand now
+always renders the viewer's own seat (`humanSeats[0]`, falling back to the
+current player in watch mode, where there is nothing to hide).
+
 ## 12. Stretch ideas (post-v1, keep out of the way for now)
 
 - **Current cards**: an event deck that reshuffles ledge costs mid-game.
