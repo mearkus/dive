@@ -199,6 +199,23 @@ html, body {
   .pay { padding: 7px 12px; font-size: 14px; }
 }
 
+/* A phone held sideways: the board gets a third of the height unless the
+   chrome gives some back. */
+@media (max-height: 520px) {
+  #ui { padding: 6px; gap: 6px; }
+  .player { padding: 4px 9px; min-width: 62px; }
+  .player .sub, .player .who { display: none; }
+  .player .dot { width: 24px; height: 24px; font-size: 13px; }
+  .player .score { font-size: 16px; }
+  #meta { padding: 5px 9px; font-size: 11px; }
+  #log { max-height: 17vh; font-size: 11px; padding: 6px 9px; }
+  #tray { padding: 7px; gap: 6px; }
+  #prompt { font-size: 12.5px; }
+  .card { width: 28px; height: 38px; font-size: 15px; border-radius: 6px; }
+  .pay { padding: 4px 11px; font-size: 13px; }
+  .pay small { font-size: 10px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: .01ms !important; }
 }

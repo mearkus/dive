@@ -249,6 +249,20 @@ export class GameScene {
     });
   }
 
+  /**
+   * Re-lay-out for a new viewport shape (a phone rotating). Cheaper and less
+   * fragile than rebuilding the scene: ledge positions are recomputed and the
+   * divers snap to them, so the game continues undisturbed.
+   */
+  relayout(state: GameState, legal: LegalDescend[] = []): void {
+    this.board.relayout();
+    this.placeAll(state, true);
+    this.refreshLedgePlates(state, legal);
+    for (const view of this.divers.values()) {
+      if (state.divers[view.id].pos.kind === 'scored') view.group.visible = false;
+    }
+  }
+
   /** Lift the chosen diver briefly so the player can see what they picked. */
   highlightDiver(id: string | null): void {
     for (const [key, view] of this.divers) {

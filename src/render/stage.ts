@@ -73,6 +73,13 @@ export function createStage(canvas: HTMLCanvasElement, trenchCount: number, maxD
   const raycaster = new Raycaster();
   const pointer = new Vector2();
 
+  /** How much of the viewport the fixed UI actually occupies right now. */
+  function chromeFraction(): number {
+    const height = window.innerHeight;
+    const measure = (id: string) => document.getElementById(id)?.getBoundingClientRect().height ?? 0;
+    return (measure('hud') + measure('tray') + 26) / Math.max(1, height);
+  }
+
   function resize(): void {
     const w = window.innerWidth;
     const h = window.innerHeight;
@@ -82,7 +89,7 @@ export function createStage(canvas: HTMLCanvasElement, trenchCount: number, maxD
 
     // Re-frame so the whole board fits this viewport, keeping the direction
     // the player has orbited to.
-    const distance = fitDistance(camera.fov, camera.aspect, trenchCount, maxDepth);
+    const distance = fitDistance(camera.fov, camera.aspect, trenchCount, maxDepth, chromeFraction());
     const direction = camera.position.clone().sub(controls.target).normalize();
     camera.position.copy(controls.target).addScaledVector(direction, distance);
     controls.update();

@@ -21,7 +21,7 @@ interface Options {
   games: number;
   players: number;
   seed: number;
-  bot: 'greedy' | 'search';
+  bots: string[];
   maxRiders: number | null;
   allowVoluntaryRefresh: boolean;
   trenchCount: number;
@@ -40,7 +40,7 @@ function parseArgs(argv: string[]): Options {
     games: Number(get('games') ?? 200),
     players: Number(get('players') ?? 3),
     seed: Number(get('seed') ?? 1),
-    bot: (get('bot') as Options['bot']) ?? 'greedy',
+    bots: (get('bots') ?? get('bot') ?? 'greedy').split(','),
     maxRiders: maxRiders === undefined || maxRiders === '' ? null : Number(maxRiders),
     allowVoluntaryRefresh: get('voluntaryRefresh') === 'true',
     trenchCount: Number(get('trenches') ?? 4),
@@ -63,6 +63,9 @@ interface Totals {
   strandedDivers: number;
   totalDivers: number;
   winsBySeat: number[];
+  winsByPolicy: Record<string, number>;
+  gamesByPolicy: Record<string, number>;
+  scoreByPolicy: Record<string, number>;
   scoreSamples: number[];
   marginSamples: number[];
   wrecksByTrench: number[];
@@ -78,6 +81,16 @@ function mean(xs: number[]): number {
 
 function pct(n: number, d: number): string {
   return d === 0 ? '—' : `${((100 * n) / d).toFixed(1)}%`;
+}
+
+/** Build one policy per seat, rotated by game so seat bias cancels out. */
+function seatPolicies(options: Options, game: number): Policy[] {
+  return Array.from({ length: options.players }, (_, seat) => {
+    const name = options.bots[(seat + game) % options.bots.length];
+    return name === 'search'
+      ? search({ samples: 5, horizon: 8, seed: 1000 + seat })
+      : greedy({ noise: 0.15, seed: 1000 + seat });
+  });
 }
 
 function playOne(seed: number, options: Options, bots: Policy[], totals: Totals): void {
@@ -127,6 +140,13 @@ function playOne(seed: number, options: Options, bots: Policy[], totals: Totals)
 
   const table = standings(state);
   totals.winsBySeat[table[0].player] += 1;
+  const winner = bots[table[0].player].name;
+  totals.winsByPolicy[winner] = (totals.winsByPolicy[winner] ?? 0) + 1;
+  for (const p of bots) totals.gamesByPolicy[p.name] = (totals.gamesByPolicy[p.name] ?? 0) + 1;
+  for (const row of table) {
+    const n = bots[row.player].name;
+    totals.scoreByPolicy[n] = (totals.scoreByPolicy[n] ?? 0) + row.score;
+  }
   totals.scoreSamples.push(...scores(state));
   if (table.length > 1) totals.marginSamples.push(table[0].score - table[1].score);
 
@@ -138,11 +158,6 @@ function playOne(seed: number, options: Options, bots: Policy[], totals: Totals)
 
 function main(): void {
   const options = parseArgs(process.argv.slice(2));
-  const bots: Policy[] =
-    options.bot === 'search'
-      ? Array.from({ length: options.players }, (_, i) => search({ samples: 5, horizon: 8, seed: 1000 + i }))
-      : Array.from({ length: options.players }, (_, i) => greedy({ noise: 0.15, seed: 1000 + i }));
-
   const totals: Totals = {
     games: 0,
     turns: [],
@@ -156,6 +171,9 @@ function main(): void {
     strandedDivers: 0,
     totalDivers: 0,
     winsBySeat: Array.from({ length: options.players }, () => 0),
+    winsByPolicy: {},
+    gamesByPolicy: {},
+    scoreByPolicy: {},
     scoreSamples: [],
     marginSamples: [],
     wrecksByTrench: Array.from({ length: options.trenchCount }, () => 0),
@@ -170,11 +188,13 @@ function main(): void {
     diversPerPlayer: options.diversPerPlayer,
   });
   const started = Date.now();
-  for (let g = 0; g < options.games; g++) playOne(options.seed + g, options, bots, totals);
+  for (let g = 0; g < options.games; g++) {
+    playOne(options.seed + g, options, seatPolicies(options, g), totals);
+  }
   const elapsed = (Date.now() - started) / 1000;
 
   const turns = [...totals.turns].sort((a, b) => a - b);
-  console.log(`\nSUNKEN HOLD — ${totals.games} games, ${options.players} players, bot ${bots[0].name}`);
+  console.log(`\nSUNKEN HOLD — ${totals.games} games, ${options.players} players, bots ${options.bots.join(' vs ')}`);
   console.log(
     `  trenches=${options.trenchCount} divers=${options.diversPerPlayer} ` +
       `hand=${options.handSize} deck=${options.deckComposition.join('/')} ` +
@@ -217,6 +237,19 @@ function main(): void {
   console.log(
     `    wrecks reached      ${totals.wrecksByTrench.map((n, i) => `T${i + 1} ${(n / totals.games).toFixed(1)}`).join('   ')}`,
   );
+  if (Object.keys(totals.winsByPolicy).length > 1 || options.bots.length > 1) {
+    console.log('\n  HEAD TO HEAD  (seats rotated each game, so this is policy strength, not seat luck)');
+    for (const name of Object.keys(totals.gamesByPolicy).sort()) {
+      const seated = totals.gamesByPolicy[name];
+      const wins = totals.winsByPolicy[name] ?? 0;
+      const avg = (totals.scoreByPolicy[name] ?? 0) / seated;
+      console.log(
+        `    ${name.padEnd(22)} won ${String(wins).padStart(4)} of ${String(seated).padStart(4)} seats` +
+          `  ${pct(wins, seated).padStart(6)}   mean score ${avg.toFixed(2)}`,
+      );
+    }
+    console.log(`    (fair share would be ${(100 / options.players).toFixed(1)}%)`);
+  }
   console.log('');
 }
 
