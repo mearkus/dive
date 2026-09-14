@@ -497,7 +497,7 @@ it's cheaper and reads better under fog).
 | **M2** | ✅ Static scene | Trenches as lit shafts, cost plates, treasure plates, fog/backdrop/particulate; legibility verified in-browser at real camera distance |
 | **M3** | ✅ **Playable 3D** | Click a diver or a glowing ledge → pick an exact-sum payment → animated descent. HUD, hand rail, play log, bots, end screen, `?watch=1` attract mode. Verified end-to-end in a headless browser: a full 45-turn game with zero page errors |
 | **M4** | ✅ Opponents | Greedy + search bots, difficulty selection, bot pacing. Strength **measured**, not assumed: search wins 62% of seats head-to-head at 2 players and 55% against a 33% fair share at 3 (§11c) |
-| **M5** | Polish | Audio, bloom/particulate, quality tiers, tutorial, end screen, board-mode fallback |
+| **M5** | Polish (in progress) | ✅ tutorial, end screen, quality tiers, particulate. Remaining: audio, bloom, 2D board-mode fallback |
 | **M6** | Stretch | Seeded replays, daily seed + leaderboard, online play, extra trench decks |
 
 **M1 is the gate, and it earned its keep.** Building the terminal version
@@ -570,6 +570,38 @@ plus the surface have to share roughly 250 usable pixels of height, which caps
 how large a cost plate can be. Portrait is the orientation to hold it in.
 Making landscape genuinely good needs a different presentation — showing part
 of the board and panning — not more camera maths.
+
+## 11d. The tutorial
+
+Built as **contextual coaching**, not a scripted tutorial mode: short lessons
+that fire the first time each situation becomes true, once each, remembered
+across sessions.
+
+The reasoning is that the interface is not what needs teaching — click a
+diver, pick a payment, done. What needs teaching is *why the line rule
+matters*, and no rules screen conveys that. It lands when the player has a
+move selected and the prompt reads "carries C3, C1 free" — so that is exactly
+when the lesson appears.
+
+A scripted mode was rejected: it would need forced game states and a script
+engine, would duplicate the rules, and would teach the mechanic at a moment
+the player has no stake in it.
+
+Nine lessons, weighted so the most important wins when several match at once:
+the opening move, exact-sum payment, **carrying riders** and **being
+carried**, hitching onto a rival, the wreck coming into reach, a trench being
+stripped, a forced refresh, and the final round. Decision-moment lessons are
+sticky — they stay while the payment panel is open; the rest time out.
+
+Notes for anyone extending it:
+
+- The opening lesson cannot key off `state.turn`. The start player is random,
+  so a human seated second or third reaches their first turn well after the
+  counter has moved; it keys off "none of my divers have left the surface".
+- `localStorage` is wrapped in try/catch. Blocked storage degrades to
+  re-teaching each session rather than throwing.
+- Tips are off in `?watch=1`, and the intro carries an opt-out plus a reset
+  that only appears once there is something to reset.
 
 ## 12. Stretch ideas (post-v1, keep out of the way for now)
 

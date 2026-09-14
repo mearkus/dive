@@ -19,6 +19,14 @@
 
       <aside id="log" aria-live="polite"></aside>
 
+      <div id="coach" role="status" aria-live="polite">
+        <div class="coach-body">
+          <h3 id="coachTitle"></h3>
+          <p id="coachText"></p>
+        </div>
+        <button id="coachOk" type="button">Got it</button>
+      </div>
+
       <footer id="tray">
         <div id="prompt">Loading the dive…</div>
         <div id="hand"></div>
@@ -37,6 +45,13 @@
           <li>Divers sharing a ledge are clipped to one line — <b>when you descend, everyone stacked above you comes too, free</b>.</li>
           <li>First to a wreck takes the richest treasure. When the last token goes, the trench is stripped and <b>everyone still inside surfaces with nothing</b>.</li>
         </ol>
+        <div class="row">
+          <label class="check">
+            <input type="checkbox" id="tips" checked />
+            <span>Tutorial tips</span>
+          </label>
+          <button id="replayTips" type="button" class="ghost" hidden>Replay tips</button>
+        </div>
         <div class="row">
           <label>Players
             <select id="playerCount">
