@@ -28,6 +28,14 @@ export interface LedgeView {
   isWreck: boolean;
 }
 
+interface WallView {
+  mesh: Mesh;
+  flanks: Mesh[];
+  /** Height the geometry was built at, so a relayout can scale from it. */
+  builtHeight: number;
+  depth: number;
+}
+
 export interface BoardView {
   root: Group;
   ledges: LedgeView[];
@@ -36,6 +44,8 @@ export interface BoardView {
   nameplates: { trench: number; sprite: Sprite }[];
   treasureLabels: { trench: number; sprite: Sprite }[];
   ledgeAt(trench: number, ledge: number): LedgeView | undefined;
+  /** Reposition everything that depends on LEDGE_DROP / NAMEPLATE_Y. */
+  relayout(): void;
 }
 
 export function buildBoard(state: GameState): BoardView {
@@ -43,6 +53,7 @@ export function buildBoard(state: GameState): BoardView {
   const ledges: LedgeView[] = [];
   const targets: Mesh[] = [];
   const nameplates: BoardView['nameplates'] = [];
+  const walls: WallView[] = [];
   const treasureLabels: BoardView['treasureLabels'] = [];
   const count = state.trenches.length;
   const maxDepth = Math.max(...state.trenches.map((t) => t.depth));
@@ -64,6 +75,7 @@ export function buildBoard(state: GameState): BoardView {
     );
     wall.position.set(x, -wallHeight / 2 + 1.6, -1.5);
     root.add(wall);
+    const flankMeshes: Mesh[] = [];
 
     // Side walls turn the flat backdrop into a shaft with real depth.
     for (const side of [-1, 1]) {
@@ -79,7 +91,9 @@ export function buildBoard(state: GameState): BoardView {
       flank.position.set(x + side * (LEDGE_WIDTH / 2 + 0.8), -wallHeight / 2 + 1.6, 0.15);
       flank.rotation.y = side * -Math.PI * 0.42;
       root.add(flank);
+      flankMeshes.push(flank);
     }
+    walls.push({ mesh: wall, flanks: flankMeshes, builtHeight: wallHeight, depth: trench.depth });
 
     const label = new Sprite(
       new SpriteMaterial({ map: nameplate(trench.name, `depth ${trench.depth}`, false), depthWrite: false, fog: false }),
@@ -186,6 +200,24 @@ export function buildBoard(state: GameState): BoardView {
     nameplates,
     treasureLabels,
     ledgeAt: (trench, ledge) => index.get(`${trench}:${ledge}`),
+    relayout() {
+      for (const ledge of ledges) ledge.group.position.y = ledgeY(ledge.ledge);
+      for (const target of targets) {
+        const { ledge } = target.userData as { ledge: number };
+        target.position.y = ledgeY(ledge) - 0.1;
+      }
+      for (const { sprite } of nameplates) sprite.position.y = NAMEPLATE_Y;
+      for (const wall of walls) {
+        const height = wall.depth * LEDGE_DROP + 2.6;
+        const scale = height / wall.builtHeight;
+        wall.mesh.scale.y = scale;
+        wall.mesh.position.y = -height / 2 + 1.6;
+        for (const flank of wall.flanks) {
+          flank.scale.y = scale;
+          flank.position.y = -height / 2 + 1.6;
+        }
+      }
+    },
   };
 }
 

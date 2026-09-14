@@ -16,11 +16,18 @@ export const SURFACE_Y = 1.2;
 /** Trench nameplates hang above the waiting divers. */
 export let NAMEPLATE_Y = 5.4;
 
-/** Set once at startup from the viewport shape. */
-export function configureLayout(aspect: number): void {
+/**
+ * Choose the vertical layout for a viewport shape. Returns true when the
+ * values actually changed, which is the signal to re-lay-out the board —
+ * rotating a phone must not leave portrait spacing on a landscape screen.
+ */
+export function configureLayout(aspect: number): boolean {
   const portrait = aspect < 0.95;
-  LEDGE_DROP = portrait ? 3.5 : 2.0;
+  const drop = portrait ? 3.5 : 2.0;
+  if (drop === LEDGE_DROP) return false;
+  LEDGE_DROP = drop;
   NAMEPLATE_Y = portrait ? 6.4 : 5.4;
+  return true;
 }
 
 export function trenchX(index: number, count: number): number {
@@ -65,14 +72,23 @@ export function frameFor(trenchCount: number, maxDepth: number) {
  * Without the horizontal term a narrow phone screen shows only the middle
  * trenches.
  */
-export function fitDistance(fovDegrees: number, aspect: number, trenchCount: number, maxDepth: number): number {
+export function fitDistance(
+  fovDegrees: number,
+  aspect: number,
+  trenchCount: number,
+  maxDepth: number,
+  /** Share of the viewport height covered by the HUD and card tray, 0..1. */
+  chromeFraction = 0.28,
+): number {
   const { width, height } = boardExtent(trenchCount, maxDepth);
   const vFov = (fovDegrees * Math.PI) / 180;
   const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
-  // Leave room for the HUD above and the card tray below.
-  const chrome = aspect < 1 ? 1.38 : 1.4;
+  // Measured chrome beats a guessed constant: a phone held sideways gives the
+  // board barely a third of its height, where a fixed factor hid it behind
+  // the tray.
+  const usable = Math.max(0.3, 1 - Math.min(0.66, chromeFraction));
   return Math.max(
     width / 2 / Math.tan(hFov / 2),
-    (height * chrome) / 2 / Math.tan(vFov / 2),
+    height / usable / 2 / Math.tan(vFov / 2),
   );
 }

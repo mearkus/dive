@@ -496,7 +496,7 @@ it's cheaper and reads better under fog).
 | **M1** | ✅ **Rules engine + CLI** | Engine complete and pure; 33 tests; `npm run play` plays a full game in the terminal; `npm run sim` measures balance. Bot-level tuning is done and the numbers are healthy — **the remaining gate is a human playtest** (§3.9) |
 | **M2** | ✅ Static scene | Trenches as lit shafts, cost plates, treasure plates, fog/backdrop/particulate; legibility verified in-browser at real camera distance |
 | **M3** | ✅ **Playable 3D** | Click a diver or a glowing ledge → pick an exact-sum payment → animated descent. HUD, hand rail, play log, bots, end screen, `?watch=1` attract mode. Verified end-to-end in a headless browser: a full 45-turn game with zero page errors |
-| **M4** | Opponents | Greedy + search bots, difficulty selection, bot camera/pacing |
+| **M4** | ✅ Opponents | Greedy + search bots, difficulty selection, bot pacing. Strength **measured**, not assumed: search wins 62% of seats head-to-head at 2 players and 55% against a 33% fair share at 3 (§11c) |
 | **M5** | Polish | Audio, bloom/particulate, quality tiers, tutorial, end screen, board-mode fallback |
 | **M6** | Stretch | Seeded replays, daily seed + leaderboard, online play, extra trench decks |
 
@@ -537,8 +537,39 @@ joined by a visible dive line. A six-diver stack was unreadable without all
 four.
 
 Still deferred to M5, as planned: audio, bloom, the tutorial, and the 2D
-board-mode fallback. Phone play works and is legible but is not yet optimised
-— the board is necessarily small in portrait.
+board-mode fallback.
+
+## 11c. Verifying the opponents
+
+The intro offers "Standard" and "Tough" opponents. That is a claim, so it
+needed measuring rather than assuming — `npm run sim --bots=search,greedy`
+seats the two policies against each other and rotates seats every game so the
+result is policy strength, not seat luck.
+
+The first measurement said **54% over 200 games** — inside the noise, i.e. the
+"Tough" setting was not demonstrably tougher. The cause was a one-line bug in
+the search bot's action list: candidate moves were deduplicated by diver id
+alone, but a diver waiting at the surface has one legal action *per open
+trench*, all sharing that id. They collapsed to a single entry, so the bot
+could only ever enter whichever trench came first and never chose between
+them. Keying on diver *and* trench fixed it.
+
+| | search | greedy |
+| --- | --- | --- |
+| 2 players, 600 games | **62.2%** of seats won | 37.8% |
+| 3 players, 300 games | **55.3%** (fair share 33.3%) | 22.3% each |
+
+Worth noting for anyone tuning it further: before the fix, search won slightly
+more often while scoring *less* than greedy. That is consistent with its
+evaluation, which maximises the margin over the best opponent rather than raw
+points — it plays to win, not to score.
+
+**Mobile.** Phone play is legible in portrait and the board re-lays-out when
+the device rotates, but landscape on a phone is inherently tight: eight ledges
+plus the surface have to share roughly 250 usable pixels of height, which caps
+how large a cost plate can be. Portrait is the orientation to hold it in.
+Making landscape genuinely good needs a different presentation — showing part
+of the board and panning — not more camera maths.
 
 ## 12. Stretch ideas (post-v1, keep out of the way for now)
 

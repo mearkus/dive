@@ -112,12 +112,20 @@ export function search(options: SearchOptions = {}): Policy {
   };
 }
 
-/** One action per (diver, target); the cheapest payment stands in for the rest. */
+/**
+ * One action per (diver, trench); the cheapest payment stands in for the rest,
+ * since which exact cards are spent matters far less than where the diver goes.
+ *
+ * The trench must be part of the key. A diver waiting at the surface has one
+ * legal action per open trench, all sharing its id — keying on the id alone
+ * collapsed them to a single entry, so the bot could only ever enter whichever
+ * trench happened to come first and never chose between them.
+ */
 function dedupe(actions: Action[]): Action[] {
   const seen = new Set<string>();
   const out: Action[] = [];
   for (const action of actions) {
-    const key = action.kind === 'refresh' ? 'refresh' : `${action.diver}`;
+    const key = action.kind === 'refresh' ? 'refresh' : `${action.diver}:${action.trench ?? ''}`;
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(action);

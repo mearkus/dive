@@ -7,6 +7,7 @@ import {
   type LegalDescend,
 } from '../rules/index.js';
 import { greedy, search, type Policy } from '../ai/index.js';
+import { configureLayout } from '../render/layout.js';
 import { narrate } from '../common/describe.js';
 import { GameScene } from '../render/scene.js';
 import type { Stage } from '../render/stage.js';
@@ -44,6 +45,14 @@ export class Controller {
     );
 
     stage.renderer.domElement.addEventListener('pointerdown', (e) => this.onPointerDown(e));
+
+    // A phone turning sideways needs the board rebuilt, not just re-framed.
+    window.addEventListener('resize', () => {
+      if (!configureLayout(window.innerWidth / Math.max(1, window.innerHeight))) return;
+      const apply = () => this.scene.relayout(this.state, this.myLegalDescends());
+      if (this.scene.timeline.busy) this.scene.timeline.onIdle(apply);
+      else apply();
+    });
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') this.clearSelection();
     });
