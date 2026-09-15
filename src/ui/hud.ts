@@ -34,6 +34,7 @@ export class Hud {
       const closing = row.stranded === 1 && state.endTriggeredBy === null;
       const card = document.createElement('div');
       card.className = `player${active ? ' active' : ''}${closing ? ' closing' : ''}`;
+      card.dataset.seat = String(row.player);
       card.style.setProperty('--c', PLAYER_CSS[row.player % PLAYER_CSS.length]);
       card.innerHTML =
         `<span class="dot">${String.fromCharCode(65 + row.player)}</span>` +
@@ -132,6 +133,51 @@ export class Hud {
       this.hand.appendChild(card);
     });
     this.lastHand = [...cards];
+  }
+
+  /**
+   * Send card-backs sailing between two points. Opponents' spending used to
+   * change nothing but a two-digit count, so the deck never looked shared.
+   */
+  private fly(from: DOMRect, to: DOMRect, count: number, delay = 0): void {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const n = Math.min(count, 4);
+    for (let i = 0; i < n; i++) {
+      const flyer = document.createElement('div');
+      flyer.className = 'flyer';
+      flyer.style.left = `${from.left + from.width / 2 - 13}px`;
+      flyer.style.top = `${from.top + from.height / 2 - 18}px`;
+      flyer.style.opacity = '0';
+      document.body.appendChild(flyer);
+
+      const dx = to.left + to.width / 2 - (from.left + from.width / 2);
+      const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+      window.setTimeout(() => {
+        flyer.style.opacity = '1';
+        flyer.style.transform = `translate(${dx}px, ${dy}px) rotate(${(i - 1) * 14}deg) scale(.8)`;
+      }, delay + i * 80);
+      window.setTimeout(() => {
+        flyer.style.opacity = '0';
+      }, delay + i * 80 + 380);
+      window.setTimeout(() => flyer.remove(), delay + i * 80 + 700);
+    }
+  }
+
+  /** An opponent paying into the shared discard. */
+  opponentSpends(seat: number, count: number): void {
+    const chip = this.players.querySelector<HTMLElement>(`[data-seat="${seat}"]`);
+    if (!chip) return;
+    this.fly(chip.getBoundingClientRect(), el('discard').getBoundingClientRect(), count);
+  }
+
+  /** The discard going back into the deck. */
+  reshuffle(): void {
+    this.fly(el('discard').getBoundingClientRect(), el('deck').getBoundingClientRect(), 4);
+    const deck = el('deck');
+    deck.animate(
+      [{ transform: 'none' }, { transform: 'scale(1.12)' }, { transform: 'none' }],
+      { duration: 520, easing: 'ease-out' },
+    );
   }
 
   /** Deck and discard counts, and the value on top of the discard. */

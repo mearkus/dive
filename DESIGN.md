@@ -831,6 +831,32 @@ Also brightened, for the reason the kelp needed brightening: the coral nubs
 were small dark shapes on dark rock, and the wreck hull was dark enough that
 the treasure coins were doing all the work of marking the trench floor.
 
+## 11m. The deck is shared, and nothing said so
+
+Asked whether the deck is shared or per player, then: "I just didn't notice
+cards cycling from other players." Both the answer and the reason were in the
+code.
+
+It is shared. `GameState` holds one `deck` and one `discard`; a `Player` holds
+only a hand and tokens. All 60 cards are the table's supply.
+
+Nothing on screen said so:
+
+- **Opponents' spending was never animated.** The fly-to-discard only ran when
+  `before.current === viewSeat`, so a rival paying three cards moved a
+  two-digit count and nothing else.
+- **Reshuffles were entirely silent.** `deck-reshuffled` appeared nowhere in
+  the UI layer — no log line, no animation, no sound — despite happening about
+  three times a game and being the single clearest evidence the deck is shared.
+
+Now: opponents' cards fly from their HUD chip into the discard, the reshuffle
+sends card-backs from the discard to the deck with a riffle and a pulse, and
+the log says how many cards went back in. Flyers are skipped under
+`prefers-reduced-motion`.
+
+The general lesson, repeated from the endgame: a rule that exists only in the
+reducer and in a counter is a rule players do not know about.
+
 ## 12. Stretch ideas (post-v1, keep out of the way for now)
 
 - **Current cards**: an event deck that reshuffles ledge costs mid-game.
