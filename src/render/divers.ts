@@ -62,6 +62,12 @@ const BODY = new ExtrudeGeometry(meepleShape(), {
 BODY.translate(0, -0.44, -0.13);
 BODY.scale(0.82, 0.82, 0.82);
 
+/**
+ * How far the meeple's feet sit below its group origin, before the group is
+ * scaled. Callers need this to stand a diver *on* a ledge rather than in it.
+ */
+export const MEEPLE_BASE = -0.44 * 0.82;
+
 const TANK = new CylinderGeometry(0.075, 0.075, 0.3, 8);
 const MASK = new BoxGeometry(0.3, 0.1, 0.1);
 const FIN = new ConeGeometry(0.12, 0.24, 6);
@@ -96,7 +102,8 @@ export function buildDiver(id: string, owner: number): DiverView {
   group.add(mask);
 
   const fin = new Mesh(FIN, new MeshStandardMaterial({ color: new Color(color), roughness: 0.7 }));
-  fin.position.set(0, -0.4, -0.12);
+  // Tucked up so the fin does not hang through the shelf the diver stands on.
+  fin.position.set(0, -0.24, -0.12);
   fin.rotation.x = Math.PI;
   group.add(fin);
 
