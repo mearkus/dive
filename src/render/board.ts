@@ -84,17 +84,26 @@ function rockSlab(seed: number, width: number, depth: number): ExtrudeGeometry {
   return geo;
 }
 
-/** A frond of kelp, swaying is handled by the caller. */
+/**
+ * A frond of kelp: a long ribbon that tapers to a point and drifts sideways as
+ * it rises. The first version was a short straight blade cut off flat at the
+ * tip, which read as grass rather than kelp.
+ */
 function kelpBlade(seed: number): ExtrudeGeometry {
   let n = seed * 4801 + 9311;
   const rnd = () => ((n = (n * 9301 + 49297) % 233280) / 233280);
-  const height = 0.85 + rnd() * 1.15;
+
+  const height = 2.0 + rnd() * 2.2;
+  const bend = (rnd() - 0.5) * 1.1;
+  const w = 0.1 + rnd() * 0.05;
+
   const shape = new Shape();
-  shape.moveTo(-0.1, 0);
-  shape.quadraticCurveTo(-0.26, height * 0.5, -0.06, height);
-  shape.quadraticCurveTo(0.09, height * 0.5, 0.1, 0);
+  shape.moveTo(-w, 0);
+  shape.bezierCurveTo(-w * 1.6, height * 0.34, bend - w * 0.7, height * 0.72, bend, height);
+  shape.bezierCurveTo(bend + w * 0.6, height * 0.72, w * 1.5, height * 0.34, w, 0);
   shape.closePath();
-  return new ExtrudeGeometry(shape, { depth: 0.03, bevelEnabled: false, curveSegments: 5 });
+
+  return new ExtrudeGeometry(shape, { depth: 0.045, bevelEnabled: false, curveSegments: 10 });
 }
 
 export function buildBoard(state: GameState): BoardView {
@@ -160,20 +169,65 @@ export function buildBoard(state: GameState): BoardView {
     // A fringe of kelp around the mouth of the shaft.
     const kelpBlades = kelp;
     for (let blade = 0; blade < 9; blade++) {
+      const tint = blade % 3 === 0 ? 0x74cf88 : blade % 3 === 1 ? 0x57b877 : 0x8fdd9c;
       const kelp = new Mesh(
         kelpBlade(trench.id * 11 + blade),
         new MeshStandardMaterial({
-          color: blade % 3 === 0 ? 0x4f8f5c : blade % 3 === 1 ? 0x37784f : 0x2b6146,
-          roughness: 1,
+          color: tint,
+          roughness: 0.85,
           side: DoubleSide,
+          // Kelp sits against near-black rock in dim light. Without a little
+          // self-illumination it reads as the same dark mass as the wall.
+          emissive: new Color(tint).multiplyScalar(0.34),
         }),
       );
       const across = (blade / 8 - 0.5) * (LEDGE_WIDTH + 1.9);
-      kelp.position.set(x + across, -1.35, LEDGE_DEPTH * 0.75);
-      kelp.rotation.z = (blade - 4) * 0.09;
+      // Stagger the roots. Every frond starting at one height made a hedge
+      // along a single line rather than growth on a rock face.
+      const root_y = -1.15 - ((blade * 5) % 7) * 0.22;
+      kelp.position.set(x + across, root_y, LEDGE_DEPTH * 0.75 - ((blade * 3) % 5) * 0.16);
+      kelp.rotation.z = (blade - 4) * 0.07;
       kelp.rotation.y = blade * 0.4;
       root.add(kelp);
-      kelpBlades.push({ mesh: kelp, phase: trench.id * 2.1 + blade * 0.7, lean: (blade - 4) * 0.09 });
+      kelpBlades.push({ mesh: kelp, phase: trench.id * 2.1 + blade * 0.7, lean: (blade - 4) * 0.07 });
+
+      // A holdfast, so the frond is anchored to the rock instead of starting
+      // in mid-water.
+      const holdfast = new Mesh(
+        new BoxGeometry(0.26, 0.16, 0.22),
+        new MeshStandardMaterial({ color: 0x2f5c41, roughness: 1, flatShading: true }),
+      );
+      holdfast.position.set(x + across, root_y - 0.05, LEDGE_DEPTH * 0.75 - ((blade * 3) % 5) * 0.16);
+      holdfast.rotation.y = blade * 0.7;
+      root.add(holdfast);
+    }
+
+    // A few fronds growing out of the wall further down, so the growth does
+    // not stop dead at the rim of the trench.
+    for (let deep = 0; deep < 4; deep++) {
+      const tint = deep % 2 ? 0x4ea36d : 0x63c184;
+      const frond = new Mesh(
+        kelpBlade(trench.id * 23 + deep + 90),
+        new MeshStandardMaterial({
+          color: tint,
+          roughness: 0.9,
+          side: DoubleSide,
+          emissive: new Color(tint).multiplyScalar(0.28),
+        }),
+      );
+      const side = deep % 2 ? 1 : -1;
+      frond.position.set(
+        x + side * (LEDGE_WIDTH / 2 + 0.35),
+        -2.6 - deep * (trench.depth * LEDGE_DROP) / 6,
+        // Behind the shelves: at the front they crossed in front of the
+        // ledges and competed with the pieces standing on them.
+        -1.15,
+      );
+      frond.rotation.z = side * (0.34 + deep * 0.05);
+      frond.rotation.y = side * 0.5;
+      frond.scale.setScalar(0.68);
+      root.add(frond);
+      kelp.push({ mesh: frond, phase: trench.id + deep * 1.3, lean: side * (0.34 + deep * 0.05) });
     }
 
     for (let ledge = 1; ledge <= trench.depth; ledge++) {

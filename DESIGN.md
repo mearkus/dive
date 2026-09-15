@@ -788,6 +788,23 @@ edge: identity and the colour-blind fallback intact, a fraction of the weight.
 Divers waiting at the surface lose their mark entirely, which clears the
 densest cluster on the board.
 
+## 11k. The kelp
+
+Reported as dark against the background, and short and abrupt. All three were
+true, for separate reasons:
+
+- **Dark.** Deep greens against near-black rock in dim light are the same mass.
+  The fronds are brighter now and carry a little emissive, the same treatment
+  that rescued the player colours on the meeples.
+- **Short.** Blades were 0.85 to 2.0 units. They are 2.0 to 4.2 now.
+- **Abrupt.** Two causes. The blade was a straight ribbon cut off flat at the
+  tip, so it ended rather than tapered; it is a curving frond narrowing to a
+  point. And every blade was rooted at exactly the same height, which made a
+  hedge along a single line rather than growth on a rock face — roots are
+  staggered now, each frond has a holdfast so it is anchored rather than
+  starting in mid-water, and a few grow from the walls further down so the
+  planting does not stop dead at the rim.
+
 ## 12. Stretch ideas (post-v1, keep out of the way for now)
 
 - **Current cards**: an event deck that reshuffles ledge costs mid-game.
