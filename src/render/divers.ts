@@ -75,7 +75,14 @@ export function buildDiver(id: string, owner: number): DiverView {
 
   const suit = new Mesh(
     BODY,
-    new MeshStandardMaterial({ color: new Color(color), roughness: 0.45, metalness: 0.08 }),
+    new MeshStandardMaterial({
+      color: new Color(color),
+      roughness: 0.45,
+      metalness: 0.08,
+      // A meeple in shadow against dark rock loses its player colour entirely,
+      // which is the one thing about it that carries information.
+      emissive: new Color(color).multiplyScalar(0.3),
+    }),
   );
   group.add(suit);
 

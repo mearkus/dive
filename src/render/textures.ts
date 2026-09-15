@@ -126,7 +126,7 @@ export function rockFace(seed: number): Texture {
   const W = 256;
   const H = 640;
   const [c, ctx] = canvas(W, H);
-  ctx.fillStyle = '#224654';
+  ctx.fillStyle = '#2b5566';
   ctx.fillRect(0, 0, W, H);
 
   let s = seed * 9301 + 49297;
@@ -147,7 +147,10 @@ export function rockFace(seed: number): Texture {
   // Darken toward the bottom: light does not reach the floor.
   const grad = ctx.createLinearGradient(0, 0, 0, H);
   grad.addColorStop(0, 'rgba(0,0,0,0)');
-  grad.addColorStop(1, 'rgba(0,0,0,0.72)');
+  // Was 0.72, which crushed the lower two thirds of every wall to black and
+  // took the rock with it. Depth is carried by fog and lighting; the texture
+  // only needs to hint at it.
+  grad.addColorStop(1, 'rgba(0,0,0,0.42)');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 

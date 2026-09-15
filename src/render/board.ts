@@ -14,7 +14,7 @@ import {
   type Object3D,
 } from 'three';
 import type { GameState } from '../rules/index.js';
-import { GOLD, LEDGE, ROCK, ROCK_LIT, depthMix } from './palette.js';
+import { GOLD, LEDGE, LEDGE_DEEP, depthMix } from './palette.js';
 import { costPlate, nameplate, rockFace, surfaceShimmer } from './textures.js';
 import { DIVER_ROW_OFFSET, LEDGE_DEPTH, LEDGE_DROP, LEDGE_WIDTH, NAMEPLATE_Y, SURFACE_Y, ledgeY, trenchX } from './layout.js';
 
@@ -117,7 +117,10 @@ export function buildBoard(state: GameState): BoardView {
       new PlaneGeometry(LEDGE_WIDTH + 1.6, wallHeight, 1, 8),
       new MeshStandardMaterial({
         map: rockFace(trench.id + 1),
-        color: new Color(depthMix(ROCK_LIT, ROCK, -0.25)),
+        // A textured material multiplies map by colour, so tinting rock with a
+        // dark rock colour compounded to near-black. The texture carries the
+        // hue; the colour only trims it.
+        color: new Color(0xd6ecf5),
         roughness: 1,
         metalness: 0,
         side: DoubleSide,
@@ -133,7 +136,8 @@ export function buildBoard(state: GameState): BoardView {
         new PlaneGeometry(3.4, wallHeight, 1, 6),
         new MeshStandardMaterial({
           map: rockFace(trench.id * 7 + (side > 0 ? 3 : 5)),
-          color: new Color(depthMix(ROCK_LIT, ROCK, 0.55)),
+          // Flanks sit a shade back from the face they flank.
+          color: new Color(0x8fb6c6),
           roughness: 1,
           side: DoubleSide,
         }),
@@ -181,7 +185,7 @@ export function buildBoard(state: GameState): BoardView {
       const shelf = new Mesh(
         rockSlab(trench.id * 31 + ledge, LEDGE_WIDTH, LEDGE_DEPTH),
         new MeshStandardMaterial({
-          color: new Color(depthMix(LEDGE, ROCK, ledge / maxDepth)),
+          color: new Color(depthMix(LEDGE, LEDGE_DEEP, ledge / maxDepth)),
           roughness: 0.95,
           flatShading: true,
           emissive: new Color(0x000000),
@@ -189,6 +193,13 @@ export function buildBoard(state: GameState): BoardView {
       );
       shelf.position.y = -0.42;
       group.add(shelf);
+
+      const lip = new Mesh(
+        new BoxGeometry(LEDGE_WIDTH * 0.97, 0.085, 0.085),
+        new MeshBasicMaterial({ color: 0xa8e4f5, transparent: true, opacity: 0.66 }),
+      );
+      lip.position.set(0, -0.09, LEDGE_DEPTH / 2 + 0.05);
+      group.add(lip);
 
       // Coral nubs clinging to the outcrop — small, but they break the
       // repetition that made every shelf look machined.
