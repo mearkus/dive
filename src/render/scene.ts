@@ -116,8 +116,8 @@ export class GameScene {
       sprite.position.set(0.4, -1.5 - 0.6 * k, 1.4);
     }
     for (const view of this.divers.values()) {
-      const base = view.badge.userData.base ?? 0.5;
-      view.badge.scale.set(base * k, base * k, 1);
+      const base = view.badge.userData.base ?? 0.46;
+      view.badge.scale.set(base * k, base * 0.76 * k, 1);
     }
     // Diver size follows the same retreat as the labels.
     for (const view of this.divers.values()) {
@@ -182,6 +182,18 @@ export class GameScene {
       if (scored && instant) view.group.visible = false;
     }
     this.refreshLedgePlates(state);
+    this.refreshBadges(state);
+  }
+
+  /**
+   * A diver waiting at the surface is interchangeable with every other, so its
+   * letter carries no information — and the waiting row is the densest cluster
+   * of marks on the board. Hide those.
+   */
+  private refreshBadges(state: GameState): void {
+    for (const [id, view] of this.divers) {
+      view.badge.visible = state.divers[id].pos.kind === 'ledge';
+    }
   }
 
   /** Costs turn teal when you can afford them; trench labels dim when closed. */
@@ -301,7 +313,7 @@ export class GameScene {
       const on = key === id;
       const material = view.lamp.material as MeshStandardMaterial & { opacity: number };
       material.opacity = on ? 0.3 : 0.09;
-      view.badge.userData.base = on ? 0.72 : 0.5;
+      view.badge.userData.base = on ? 0.64 : 0.46;
     }
     this.applyLabelScale();
   }
