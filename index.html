@@ -67,11 +67,23 @@
         </p>
 
         <h4>Paying for a move</h4>
-        <p>
-          You hold 5 air cards, refilled after every move. To drop a diver one ledge, discard any
-          combination summing to that ledge's number <b>exactly</b> — no overpaying. A ledge
-          <b class="lit">glows</b> when your current hand can pay it. If nothing is payable, your
-          turn is spent swapping the whole hand for a fresh one.
+        <p class="when-shared">
+          You hold 5 air cards, refilled after every move from a deck <b>shared by the whole
+          table</b>. To drop a diver one ledge, discard any combination summing to that ledge's
+          number <b>exactly</b> — no overpaying. A ledge <b class="lit">glows</b> when your current
+          hand can pay it. If nothing is payable, your turn is spent swapping the whole hand for a
+          fresh one.
+        </p>
+        <p class="when-personal">
+          You hold 5 air cards drawn from <b>your own supply of 12</b> — not a shared deck. To drop
+          a diver one ledge, discard any combination summing to that ledge's number <b>exactly</b> —
+          no overpaying. A ledge <b class="lit">glows</b> when your current hand can pay it.
+        </p>
+        <p class="when-personal spaced">
+          If nothing is payable, your turn is spent <b>surfacing for air</b>: everything you have
+          spent comes back, minus <b>two cards burnt for good</b>. Your supply only ever gets
+          smaller. When it can no longer fill a hand you are <b>out of air</b>, and your divers are
+          pulled out with nothing.
         </p>
 
         <h4>The line — this is the game</h4>
@@ -117,6 +129,14 @@
           <li>Divers sharing a ledge are clipped to one line — <b>when you descend, everyone who landed there after you comes too, free</b>. Arrive first and you tow them all; arrive last and you tow nobody.</li>
           <li>First to a wreck takes the richest treasure. When the last token goes, the trench is stripped and <b>everyone still inside surfaces with nothing</b>.</li>
         </ol>
+        <label class="check stacked">
+          <input type="checkbox" id="personalAir" />
+          <span>
+            <b>Personal air supply</b>
+            <small>Each diver carries their own 12 cards instead of one shared deck. Surfacing for air brings back what you spent, minus two cards burnt for good — run dry and you are pulled out.</small>
+          </span>
+        </label>
+
         <div class="row">
           <label class="check">
             <input type="checkbox" id="tips" checked />

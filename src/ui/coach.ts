@@ -35,6 +35,7 @@ export interface Lesson {
 }
 
 const mine = (c: CoachContext, owner: number) => c.humanSeats.includes(owner);
+const personal = (c: CoachContext) => c.state.config.airMode === 'personal';
 
 export const LESSONS: Lesson[] = [
   {
@@ -126,7 +127,54 @@ export const LESSONS: Lesson[] = [
       'No combination in your hand matches a ledge you can reach, so your turn is spent surfacing for air: ' +
       'the whole hand is swapped for a fresh one.',
     weight: 80,
-    when: (c) => c.phase === 'turn-start' && c.legal.length === 0,
+    when: (c) => c.phase === 'turn-start' && c.legal.length === 0 && !personal(c),
+  },
+  {
+    id: 'personal-supply',
+    title: 'This air is yours alone',
+    body:
+      'You are drawing from <b>your own supply</b>, not a shared deck. It does not refill on its own — ' +
+      'the only way back is surfacing for air, and that costs some of it permanently. Spend it like it runs out, ' +
+      'because it does.',
+    weight: 190,
+    // Deliberately NOT "all my divers are at the surface": that is the welcome
+    // lesson's moment, welcome outranks this, and only one lesson shows at a
+    // time — so this could never fire. It waits for the first diver to be in
+    // the water instead.
+    when: (c) =>
+      personal(c) &&
+      c.phase === 'turn-start' &&
+      Object.values(c.state.divers).some((d) => mine(c, d.owner) && d.pos.kind === 'ledge'),
+  },
+  {
+    id: 'no-air-personal',
+    title: 'Surfacing costs you',
+    body:
+      'Nothing in your hand pays for a reachable ledge, so this turn is spent surfacing. Everything you have ' +
+      'spent comes back — <b>minus two cards burnt for good</b>. Every recovery leaves you with less air than the last.',
+    weight: 120,
+    when: (c) => personal(c) && c.phase === 'turn-start' && c.legal.length === 0,
+  },
+  {
+    id: 'burnt',
+    title: 'That air is gone',
+    body:
+      'The cards burnt on surfacing are out of the game — not discarded, <b>gone</b>. Watch the count under your ' +
+      'spent pile: when your supply can no longer fill a hand, your divers are pulled out with whatever they have not yet banked.',
+    weight: 130,
+    when: (c) =>
+      personal(c) &&
+      c.phase === 'after-action' &&
+      (c.events ?? []).some((e) => e.t === 'air-recovered' && mine(c, e.player) && e.burnt.length > 0),
+  },
+  {
+    id: 'someone-dry',
+    title: 'A diver has run dry',
+    body:
+      'That player is out of air: their divers are pulled out, and they take no further turns. ' +
+      'Anything they had not already banked is lost.',
+    weight: 140,
+    when: (c) => c.phase === 'after-action' && (c.events ?? []).some((e) => e.t === 'out-of-air'),
   },
   {
     id: 'final-round',

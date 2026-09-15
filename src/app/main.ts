@@ -41,9 +41,10 @@ function begin(): void {
   // Must precede the scene: the board bakes ledge positions at build time.
   configureLayout(window.innerWidth / Math.max(1, window.innerHeight));
 
-  // Experimental: ?air=personal gives each diver their own small supply that
-  // burns down, instead of one shared deck. See DESIGN.md 11n.
-  const airMode = params.get('air') === 'personal' ? 'personal' : 'shared';
+  // Experimental: each diver carries their own small supply that burns down,
+  // instead of one shared deck. See DESIGN.md 11n. The checkbox wins; the URL
+  // parameter stays so a link can still preselect it.
+  const airMode = element<HTMLInputElement>('personalAir').checked ? 'personal' : 'shared';
   const state = newGame(seed, players, { airMode });
   const quality = detectQuality();
   const maxDepth = Math.max(...state.trenches.map((t) => t.depth));
@@ -63,6 +64,7 @@ function begin(): void {
   );
 
   element('intro').classList.add('hide');
+  document.body.classList.toggle('personal-air', airMode === 'personal');
   stage.start();
   controller.start();
 }
@@ -81,10 +83,46 @@ if (Coach.anySeen()) {
 
 // The rules stay one tap away for the whole game — the cost/payment model is
 // not something a player should have to remember from an intro screen.
+// Preselect from the URL, remember the choice, and keep the rules card in step.
+const personalAir = element<HTMLInputElement>('personalAir');
+try {
+  const fromUrl = new URLSearchParams(location.search).get('air');
+  personalAir.checked = fromUrl ? fromUrl === 'personal' : localStorage.getItem('sunkenhold.air') === 'personal';
+} catch {
+  /* storage blocked; the default stands */
+}
+document.body.classList.toggle('personal-air', personalAir.checked);
+personalAir.addEventListener('change', () => {
+  document.body.classList.toggle('personal-air', personalAir.checked);
+  try {
+    localStorage.setItem('sunkenhold.air', personalAir.checked ? 'personal' : 'shared');
+  } catch {
+    /* not fatal */
+  }
+});
+
 syncMuteButton();
 element('mute').addEventListener('click', () => {
   sfx.setMuted(!sfx.isMuted);
-  syncMuteButton();
+  // Preselect from the URL, remember the choice, and keep the rules card in step.
+const personalAir = element<HTMLInputElement>('personalAir');
+try {
+  const fromUrl = new URLSearchParams(location.search).get('air');
+  personalAir.checked = fromUrl ? fromUrl === 'personal' : localStorage.getItem('sunkenhold.air') === 'personal';
+} catch {
+  /* storage blocked; the default stands */
+}
+document.body.classList.toggle('personal-air', personalAir.checked);
+personalAir.addEventListener('change', () => {
+  document.body.classList.toggle('personal-air', personalAir.checked);
+  try {
+    localStorage.setItem('sunkenhold.air', personalAir.checked ? 'personal' : 'shared');
+  } catch {
+    /* not fatal */
+  }
+});
+
+syncMuteButton();
 });
 
 const rules = element('rules');
