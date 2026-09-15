@@ -72,6 +72,20 @@ export function pickTrenches(count: number): TrenchDef[] {
   return picked;
 }
 
+/** One player's supply, sized to `personalDeckSize` but keeping the weighting. */
+export function personalSupply(config: RulesConfig): number[] {
+  const total = config.deckComposition.reduce((a, b) => a + b, 0);
+  const supply: number[] = [];
+  config.deckComposition.forEach((count, i) => {
+    const n = Math.round((count / total) * config.personalDeckSize);
+    for (let k = 0; k < n; k++) supply.push(i + 1);
+  });
+  // Rounding can miss the target; top up with the cheapest cards.
+  while (supply.length < config.personalDeckSize) supply.push(1);
+  while (supply.length > config.personalDeckSize) supply.pop();
+  return supply;
+}
+
 export function diverId(owner: number, index: number): string {
   return `${PLAYER_LETTERS[owner] ?? String(owner)}${index + 1}`;
 }
@@ -106,6 +120,10 @@ export function newGame(
       name: names?.[p] ?? `Player ${PLAYER_LETTERS[p]}`,
       hand: [],
       tokens: [],
+      deck: [],
+      discard: [],
+      lost: [],
+      outOfAir: false,
     });
     for (let i = 0; i < config.diversPerPlayer; i++) {
       const id = diverId(p, i);
@@ -114,12 +132,26 @@ export function newGame(
   }
 
   const deck = shuffle(rng, buildDeck(config.deckComposition));
-  for (const player of players) {
-    for (let i = 0; i < config.handSize; i++) {
-      const card = deck.pop();
-      if (card !== undefined) player.hand.push(card);
+
+  if (config.airMode === 'personal') {
+    // Each diver carries their own supply, drawn from the same weighting so
+    // the exact-sum rule stays as payable as it is in the shared game.
+    for (const player of players) {
+      player.deck = shuffle(rng, personalSupply(config));
+      for (let i = 0; i < config.handSize; i++) {
+        const card = player.deck.pop();
+        if (card !== undefined) player.hand.push(card);
+      }
+      player.hand.sort((a, b) => a - b);
     }
-    player.hand.sort((a, b) => a - b);
+  } else {
+    for (const player of players) {
+      for (let i = 0; i < config.handSize; i++) {
+        const card = deck.pop();
+        if (card !== undefined) player.hand.push(card);
+      }
+      player.hand.sort((a, b) => a - b);
+    }
   }
 
   return {
@@ -143,6 +175,7 @@ export function newGame(
       ridesTaken: players.map(() => 0),
       cardsSpent: players.map(() => 0),
       aborted: players.map(() => 0),
+      burnt: players.map(() => 0),
     },
   };
 }

@@ -143,6 +143,7 @@ export class Controller {
           this.sfx.finalRound();
           break;
         case 'deck-reshuffled':
+        case 'air-recovered':
           this.sfx.reshuffle();
           break;
         case 'hand-refilled':
@@ -191,10 +192,16 @@ export class Controller {
     // Always the viewer's own hand. Showing state.current meant a bot's cards
     // were on screen during its turn.
     this.hud.setHand(this.state.players[this.viewSeat].hand);
+    // In personal mode the piles are the viewer's own supply, not the table's.
+    const seat = this.state.players[this.viewSeat];
+    const personal = this.state.config.airMode === 'personal';
+    const deck = personal ? seat.deck : this.state.deck;
+    const discard = personal ? seat.discard : this.state.discard;
     this.hud.setPiles(
-      this.state.deck.length,
-      this.state.discard.length,
-      this.state.discard[this.state.discard.length - 1],
+      deck.length,
+      discard.length,
+      discard[discard.length - 1],
+      personal ? seat.lost.length : 0,
     );
   }
 
@@ -269,7 +276,7 @@ export class Controller {
 
     // The discard emptying back into the deck is the clearest evidence the
     // deck is shared, and it used to happen in complete silence.
-    if (result.events.some((e) => e.t === 'deck-reshuffled')) {
+    if (result.events.some((e) => e.t === 'deck-reshuffled' || e.t === 'air-recovered')) {
       window.setTimeout(() => this.hud.reshuffle(), 260);
     }
     this.scene.play(this.state, result.events, () => {

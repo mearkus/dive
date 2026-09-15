@@ -297,6 +297,8 @@ html, body {
 .pile-art.spent b { font-size: 20px; color: #9fc4d2; }
 .pile-count { font-size: 13px; font-weight: 700; color: var(--ink); letter-spacing: 0; }
 .pile.empty .pile-art { opacity: .3; }
+.pile-burnt { display: none; font-size: 9px; color: var(--bad); letter-spacing: .04em; }
+.pile-burnt.show { display: block; }
 
 #options { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 .pay {

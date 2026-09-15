@@ -37,6 +37,13 @@ export interface Player {
   hand: number[];
   /** Treasure tokens collected. */
   tokens: number[];
+  /** Personal air supply; unused in the shared-deck mode. */
+  deck: number[];
+  discard: number[];
+  /** Cards burnt for good by surfacing for air. */
+  lost: number[];
+  /** Out of air: divers recalled, takes no further turns. */
+  outOfAir: boolean;
 }
 
 export type Action =
@@ -50,6 +57,8 @@ export type GameEvent =
   | { t: 'hand-discarded'; player: number; values: number[] }
   | { t: 'hand-refilled'; player: number; drawn: number[] }
   | { t: 'deck-reshuffled'; size: number }
+  | { t: 'air-recovered'; player: number; recovered: number; burnt: number[] }
+  | { t: 'out-of-air'; player: number }
   | { t: 'diver-entered'; player: number; diver: string; trench: number }
   | {
       t: 'stack-moved';
@@ -89,6 +98,17 @@ export interface RulesConfig {
    * forced refreshes — DESIGN.md §10.
    */
   deckComposition: number[];
+  /**
+   * 'shared' is the original: one 60-card deck for the table.
+   * 'personal' is the Gloomhaven-shaped experiment — each diver carries their
+   * own small supply, surfacing for air recovers what they spent but burns
+   * some of it for good, and a diver who runs dry is pulled out.
+   */
+  airMode: 'shared' | 'personal';
+  /** Cards in each player's own supply, in 'personal' mode. */
+  personalDeckSize: number;
+  /** Cards burnt for good each time a player surfaces for air. */
+  lossPerRecovery: number;
 }
 
 export const DEFAULT_CONFIG: RulesConfig = {
@@ -99,6 +119,9 @@ export const DEFAULT_CONFIG: RulesConfig = {
   allowVoluntaryRefresh: false,
   airLimit: 6,
   deckComposition: [16, 14, 11, 8, 6, 5],
+  airMode: 'shared',
+  personalDeckSize: 12,
+  lossPerRecovery: 2,
 };
 
 /** Counters for playtest instrumentation; not part of the rules. */
@@ -110,6 +133,8 @@ export interface GameStats {
   cardsSpent: number[];
   /** Divers recalled empty-handed when their trench was stripped. */
   aborted: number[];
+  /** Cards burnt for good, per player, in 'personal' mode. */
+  burnt: number[];
 }
 
 export interface GameState {

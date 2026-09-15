@@ -13,8 +13,28 @@ function illegal(message: string): never {
   throw new IllegalMoveError(message);
 }
 
+/**
+ * Personal mode: draw from this player's own supply. No reshuffle here — a
+ * personal supply is only recovered by surfacing for air, which costs cards.
+ */
+function refillPersonal(state: GameState, player: Player, events: GameEvent[]): void {
+  const drawn: number[] = [];
+  while (player.hand.length < state.config.handSize) {
+    const card = player.deck.pop();
+    if (card === undefined) break;
+    player.hand.push(card);
+    drawn.push(card);
+  }
+  player.hand.sort((a, b) => a - b);
+  if (drawn.length > 0) events.push({ t: 'hand-refilled', player: player.id, drawn });
+}
+
 /** Draw back up to the hand size, reshuffling the discard pile when the deck runs dry. */
 function refill(state: GameState, player: Player, events: GameEvent[]): void {
+  if (state.config.airMode === 'personal') {
+    refillPersonal(state, player, events);
+    return;
+  }
   const drawn: number[] = [];
   while (player.hand.length < state.config.handSize) {
     if (state.deck.length === 0) {
@@ -131,7 +151,8 @@ function applyDescend(state: GameState, action: Action & { kind: 'descend' }, ev
 
   const spent = indices.map((i) => player.hand[i]);
   for (let n = indices.length - 1; n >= 0; n--) player.hand.splice(indices[n], 1);
-  state.discard.push(...spent);
+  if (state.config.airMode === 'personal') player.discard.push(...spent);
+  else state.discard.push(...spent);
   state.stats.cardsSpent[state.current] += spent.length;
   events.push({ t: 'cards-spent', player: state.current, values: spent });
 
@@ -164,6 +185,61 @@ function applyDescend(state: GameState, action: Action & { kind: 'descend' }, ev
   refill(state, player, events);
 }
 
+/**
+ * Surfacing for air in personal mode, the Gloomhaven-shaped move: everything
+ * spent comes back, minus some of it burnt for good. A diver whose supply
+ * cannot refill a hand is out of air and is pulled out of the water.
+ */
+function recoverAir(state: GameState, player: Player, events: GameEvent[]): void {
+  player.discard.push(...player.hand);
+  player.hand = [];
+
+  const rng = mulberry32(state.rngState);
+  const recovered = shuffle(rng, [...player.discard]);
+  player.discard = [];
+
+  const burnt: number[] = [];
+  for (let i = 0; i < state.config.lossPerRecovery; i++) {
+    const card = recovered.pop();
+    if (card === undefined) break;
+    burnt.push(card);
+  }
+  player.lost.push(...burnt);
+  player.deck.push(...recovered);
+  shuffle(rng, player.deck);
+  state.rngState = rng.state;
+  state.stats.burnt[player.id] += burnt.length;
+
+  events.push({ t: 'air-recovered', player: player.id, recovered: player.deck.length, burnt });
+
+  refillPersonal(state, player, events);
+  if (player.hand.length === 0) outOfAir(state, player, events);
+}
+
+/** Pull a player out: their divers surface with nothing and they stop taking turns. */
+function outOfAir(state: GameState, player: Player, events: GameEvent[]): void {
+  if (player.outOfAir) return;
+  player.outOfAir = true;
+  events.push({ t: 'out-of-air', player: player.id });
+
+  const recalled: string[] = [];
+  for (const diver of Object.values(state.divers)) {
+    if (diver.owner !== player.id || diver.pos.kind !== 'ledge') continue;
+    const trench = state.trenches[diver.pos.trench];
+    const stack = trench.stacks[diver.pos.ledge - 1];
+    trench.stacks[diver.pos.ledge - 1] = stack.filter((id) => id !== diver.id);
+    diver.pos = { kind: 'scored' };
+    state.stats.aborted[player.id] += 1;
+    recalled.push(diver.id);
+  }
+  for (const diver of Object.values(state.divers)) {
+    if (diver.owner === player.id && diver.pos.kind === 'surface') diver.pos = { kind: 'scored' };
+  }
+  if (recalled.length > 0) {
+    events.push({ t: 'divers-recalled', trench: -1, divers: recalled });
+  }
+}
+
 function applyRefresh(state: GameState, events: GameEvent[]): void {
   const player = state.players[state.current];
   if (!state.config.allowVoluntaryRefresh && !isForcedRefresh(state) && player.hand.length > 0) {
@@ -171,6 +247,11 @@ function applyRefresh(state: GameState, events: GameEvent[]): void {
   }
   state.stats.refreshes[state.current]++;
   if (isForcedRefresh(state)) state.stats.forcedRefreshes[state.current]++;
+
+  if (state.config.airMode === 'personal') {
+    recoverAir(state, player, events);
+    return;
+  }
 
   const discarded = [...player.hand];
   state.discard.push(...discarded);
@@ -197,7 +278,9 @@ export function apply(state: GameState, action: Action): ApplyResult {
   next.turn += 1;
 
   if (next.endTriggeredBy === null) {
-    if (allSurfaced(next, actor)) {
+    // Being pulled out for want of air is not the same as bringing everyone
+    // home: it must not trigger the victory-lap final round.
+    if (!next.players[actor].outOfAir && allSurfaced(next, actor)) {
       next.endTriggeredBy = actor;
       events.push({ t: 'end-triggered', player: actor, reason: 'all-surfaced' });
     } else if (next.trenches.every((t) => t.closed)) {
@@ -210,7 +293,18 @@ export function apply(state: GameState, action: Action): ApplyResult {
     }
   }
 
-  const nextPlayer = (actor + 1) % next.players.length;
+  const seats = next.players.length;
+  let nextPlayer = (actor + 1) % seats;
+  for (let step = 0; step < seats && next.players[nextPlayer].outOfAir; step++) {
+    nextPlayer = (nextPlayer + 1) % seats;
+  }
+
+  // Everyone out of air ends it, whatever else is happening.
+  if (next.players.every((p) => p.outOfAir)) {
+    next.over = true;
+    events.push({ t: 'game-over', scores: next.players.map((p) => p.tokens.reduce((a, b) => a + b, 0)) });
+    return { state: next, events };
+  }
   // Finish the round: everyone after the trigger gets one more turn.
   if (next.endTriggeredBy !== null && nextPlayer === next.endTriggeredBy) {
     next.over = true;

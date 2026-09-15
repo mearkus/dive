@@ -180,8 +180,11 @@ export class Hud {
     );
   }
 
-  /** Deck and discard counts, and the value on top of the discard. */
-  setPiles(deck: number, discard: number, top?: number): void {
+  /** Deck and discard counts, the top discard, and air burnt for good. */
+  setPiles(deck: number, discard: number, top?: number, burnt = 0): void {
+    const burntEl = el('burnt');
+    burntEl.textContent = burnt > 0 ? `${burnt} gone` : '';
+    burntEl.classList.toggle('show', burnt > 0);
     el('deck').classList.toggle('empty', deck === 0);
     el('discard').classList.toggle('empty', discard === 0);
     el('deck').querySelector('.pile-count')!.textContent = String(deck);

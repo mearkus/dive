@@ -37,7 +37,9 @@ rival down for free. Each appears once and is remembered; turn them off, or
 reset them, on the intro screen.
 
 URL options: `?seed=42` replays an exact board, `?watch=1` sits a bot in every
-seat and plays the game out on its own.
+seat and plays the game out on its own, `?quality=low|medium|high` forces a
+rendering tier, and `?air=personal` switches on the experimental personal-deck
+variant (DESIGN.md §11n).
 
 ### How it is put together
 
