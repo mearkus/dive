@@ -75,8 +75,13 @@ export function greedy(options: GreedyOptions = {}): Policy {
         // Late on, a diver still in the water is worth nothing — push for the floor.
         score += rush * (descend.toLedge / trench.depth) * 1.5;
 
-        const cheapest = descend.combos[0];
+        // Exact payment first; a push burns its cards for good, so it is only
+        // worth it when there is no exact line at all.
+        const exact = descend.combos[0];
+        const cheapest = exact ?? descend.pushCombos[0];
+        if (!cheapest) continue;
         score -= cheapest.length * 0.12 + descend.cost * 0.04;
+        if (!exact) score -= 0.8 + cheapest.length * 0.5;
         if (noise > 0) score += (rng.next() - 0.5) * 2 * noise;
 
         const action: Action = {

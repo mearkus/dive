@@ -455,3 +455,72 @@ describe('full games', () => {
     }
   });
 });
+
+describe('pushing on', () => {
+  it('is refused unless the variant is enabled', () => {
+    let state = newGame(101, 2, { trenchCount: 5 });
+    const mover = `${'AB'[state.current]}1`;
+    const cost = state.trenches[0].costs[0];
+    state = setHand(state, state.current, [cost + 2, 6, 6, 6, 6]);
+    expect(() => apply(state, { kind: 'descend', diver: mover, cards: [0], trench: 0 })).toThrow(
+      IllegalMoveError,
+    );
+  });
+
+  it('burns what it spends rather than discarding it', () => {
+    let state = newGame(103, 2, { pushOn: true, trenchCount: 5 });
+    const actor = state.current;
+    const mover = `${'AB'[actor]}1`;
+    const cost = state.trenches[0].costs[0];
+    // A hand that cannot make the cost exactly, but can exceed it.
+    state = setHand(state, actor, [cost + 1, 6, 6, 6, 6]);
+    const before = state.discard.length;
+
+    const { state: next, events } = apply(state, {
+      kind: 'descend',
+      diver: mover,
+      cards: [0],
+      trench: 0,
+    });
+
+    expect(next.divers[mover].pos).toEqual({ kind: 'ledge', trench: 0, ledge: 1 });
+    expect(next.players[actor].lost).toEqual([cost + 1]);
+    expect(next.discard.length).toBe(before); // burnt, not discarded
+    expect(next.stats.pushes[actor]).toBe(1);
+    expect(events.some((e) => e.t === 'pushed-on')).toBe(true);
+  });
+
+  it('refuses a push that burns a card it did not need', () => {
+    let state = newGame(105, 2, { pushOn: true, trenchCount: 5 });
+    const mover = `${'AB'[state.current]}1`;
+    const cost = state.trenches[0].costs[0];
+    state = setHand(state, state.current, [cost + 1, cost + 1, 6, 6, 6]);
+    // One card already exceeds the cost, so spending two is wasteful.
+    expect(() => apply(state, { kind: 'descend', diver: mover, cards: [0, 1], trench: 0 })).toThrow(
+      IllegalMoveError,
+    );
+  });
+
+  it('offers pushes only where no exact payment exists', () => {
+    const state = newGame(107, 2, { pushOn: true, trenchCount: 5 });
+    for (const descend of legalDescends(state)) {
+      for (const combo of descend.pushCombos) {
+        const total = combo.reduce((sum, i) => sum + state.players[state.current].hand[i], 0);
+        expect(total).toBeGreaterThan(descend.cost);
+      }
+    }
+  });
+
+  it('turns an unplayable hand into a playable one', () => {
+    const stuckHand = [6, 6, 6, 6, 6];
+    let plain = newGame(109, 2, { trenchCount: 5 });
+    plain = setHand(plain, plain.current, stuckHand);
+    for (const trench of plain.trenches) trench.costs[0] = 1;
+    expect(legalDescends(plain)).toEqual([]);
+
+    let pushy = newGame(109, 2, { pushOn: true, trenchCount: 5 });
+    pushy = setHand(pushy, pushy.current, stuckHand);
+    for (const trench of pushy.trenches) trench.costs[0] = 1;
+    expect(legalDescends(pushy).length).toBeGreaterThan(0);
+  });
+});

@@ -354,7 +354,14 @@ html, body {
 .panel label.check.stacked b { color: var(--ink); font-weight: 600; }
 
 /* Only the rules for the mode being played. */
-.when-personal { display: none; }
+.when-personal, .when-push { display: none; }
+body.push-on .when-push { display: block; }
+#rules b.bad { color: var(--bad); }
+
+/* A payment that burns cards should not look like one that does not. */
+.pay.burns { background: rgba(92, 30, 38, .92); border-color: rgba(255, 138, 168, .5); }
+.pay.burns:hover { background: rgba(122, 40, 50, .95); }
+.pay.burns small { color: var(--bad); }
 body.personal-air .when-personal { display: block; }
 body.personal-air .when-shared { display: none; }
 .panel label.check input { width: 17px; height: 17px; accent-color: var(--teal); }

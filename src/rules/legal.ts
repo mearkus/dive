@@ -9,8 +9,10 @@ export interface LegalDescend {
   /** 1-based target ledge. */
   toLedge: number;
   cost: number;
-  /** Distinct payment combinations, as indices into the mover's hand. */
+  /** Distinct exact payments, as indices into the mover's hand. */
   combos: number[][];
+  /** Minimal overpayments, when pushing on is allowed. Everything spent burns. */
+  pushCombos: number[][];
   /** Divers dragged along for free, bottom first. Empty when entering from the surface. */
   riders: string[];
   /** True when the target ledge is the trench floor. */
@@ -37,6 +39,42 @@ export function combosFor(hand: number[], target: number): number[][] {
       }
     }
     if (sum !== target) continue;
+    const key = picked
+      .map((i) => hand[i])
+      .sort((a, b) => a - b)
+      .join(',');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(picked);
+  }
+  out.sort((a, b) => a.length - b.length);
+  return out;
+}
+
+/**
+ * Every minimal way to pay AT LEAST `target` — no subset of the returned set
+ * would also reach it, so a push never burns a card it did not need to.
+ * Deduplicated by value multiset like exact payments.
+ */
+export function overpaysFor(hand: number[], target: number): number[][] {
+  const out: number[][] = [];
+  if (target <= 0 || hand.length === 0 || hand.length > 20) return out;
+  const seen = new Set<string>();
+
+  for (let mask = 1; mask < 1 << hand.length; mask++) {
+    let sum = 0;
+    const picked: number[] = [];
+    for (let i = 0; i < hand.length; i++) {
+      if (mask & (1 << i)) {
+        sum += hand[i];
+        picked.push(i);
+      }
+    }
+    if (sum <= target) continue;
+    // Minimal: dropping any one card must fall short.
+    const minimal = picked.every((i) => sum - hand[i] < target);
+    if (!minimal) continue;
+
     const key = picked
       .map((i) => hand[i])
       .sort((a, b) => a - b)
@@ -80,6 +118,7 @@ function candidateDescends(state: GameState): LegalDescend[] {
           toLedge: 1,
           cost,
           combos: combosFor(player.hand, cost),
+          pushCombos: state.config.pushOn ? overpaysFor(player.hand, cost) : [],
           riders: [],
           reachesWreck: trench.depth === 1,
         });
@@ -97,6 +136,7 @@ function candidateDescends(state: GameState): LegalDescend[] {
         toLedge,
         cost,
         combos: combosFor(player.hand, cost),
+        pushCombos: state.config.pushOn ? overpaysFor(player.hand, cost) : [],
         riders: movingGroup(state, trench, diver.pos.ledge, diver.id).slice(1),
         reachesWreck: toLedge === trench.depth,
       });
@@ -108,7 +148,7 @@ function candidateDescends(state: GameState): LegalDescend[] {
 /** Descends the player can actually afford right now. */
 export function legalDescends(state: GameState): LegalDescend[] {
   if (state.over) return [];
-  return candidateDescends(state).filter((d) => d.combos.length > 0);
+  return candidateDescends(state).filter((d) => d.combos.length > 0 || d.pushCombos.length > 0);
 }
 
 /** Flattened action list — one entry per (move, payment). Includes refresh when legal. */
@@ -116,7 +156,7 @@ export function legalActions(state: GameState): Action[] {
   if (state.over) return [];
   const actions: Action[] = [];
   for (const descend of legalDescends(state)) {
-    for (const combo of descend.combos) {
+    for (const combo of [...descend.combos, ...descend.pushCombos]) {
       actions.push({ kind: 'descend', diver: descend.diver, cards: combo, trench: descend.trench });
     }
   }

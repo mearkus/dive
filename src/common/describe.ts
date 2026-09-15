@@ -33,6 +33,13 @@ export function narrate(state: GameState, event: GameEvent): Narration | null {
         : { text: `${event.diver} reaches the wreck — stripped bare, nothing left`, tone: 'bad' };
     case 'deck-reshuffled':
       return { text: `The spent air is shuffled back into the deck — ${event.size} cards`, tone: 'normal' };
+    case 'pushed-on':
+      return {
+        text:
+          `${name(event.player)} forces a ledge worth ${event.cost}, burning ` +
+          `${event.values.join('+')} for good`,
+        tone: 'bad',
+      };
     case 'air-recovered':
       return {
         text:

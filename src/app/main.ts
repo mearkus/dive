@@ -45,7 +45,8 @@ function begin(): void {
   // instead of one shared deck. See DESIGN.md 11n. The checkbox wins; the URL
   // parameter stays so a link can still preselect it.
   const airMode = element<HTMLInputElement>('personalAir').checked ? 'personal' : 'shared';
-  const state = newGame(seed, players, { airMode });
+  const pushOn = element<HTMLInputElement>('pushOn').checked;
+  const state = newGame(seed, players, { airMode, pushOn });
   const quality = detectQuality();
   const maxDepth = Math.max(...state.trenches.map((t) => t.depth));
 
@@ -65,6 +66,7 @@ function begin(): void {
 
   element('intro').classList.add('hide');
   document.body.classList.toggle('personal-air', airMode === 'personal');
+  document.body.classList.toggle('push-on', pushOn);
   stage.start();
   controller.start();
 }
@@ -101,6 +103,23 @@ personalAir.addEventListener('change', () => {
   }
 });
 
+const pushToggle = element<HTMLInputElement>('pushOn');
+try {
+  const fromUrl = new URLSearchParams(location.search).get('push');
+  pushToggle.checked = fromUrl ? fromUrl === 'on' : localStorage.getItem('sunkenhold.push') === 'on';
+} catch {
+  /* storage blocked; the default stands */
+}
+document.body.classList.toggle('push-on', pushToggle.checked);
+pushToggle.addEventListener('change', () => {
+  document.body.classList.toggle('push-on', pushToggle.checked);
+  try {
+    localStorage.setItem('sunkenhold.push', pushToggle.checked ? 'on' : 'off');
+  } catch {
+    /* not fatal */
+  }
+});
+
 syncMuteButton();
 element('mute').addEventListener('click', () => {
   sfx.setMuted(!sfx.isMuted);
@@ -117,6 +136,23 @@ personalAir.addEventListener('change', () => {
   document.body.classList.toggle('personal-air', personalAir.checked);
   try {
     localStorage.setItem('sunkenhold.air', personalAir.checked ? 'personal' : 'shared');
+  } catch {
+    /* not fatal */
+  }
+});
+
+const pushToggle = element<HTMLInputElement>('pushOn');
+try {
+  const fromUrl = new URLSearchParams(location.search).get('push');
+  pushToggle.checked = fromUrl ? fromUrl === 'on' : localStorage.getItem('sunkenhold.push') === 'on';
+} catch {
+  /* storage blocked; the default stands */
+}
+document.body.classList.toggle('push-on', pushToggle.checked);
+pushToggle.addEventListener('change', () => {
+  document.body.classList.toggle('push-on', pushToggle.checked);
+  try {
+    localStorage.setItem('sunkenhold.push', pushToggle.checked ? 'on' : 'off');
   } catch {
     /* not fatal */
   }

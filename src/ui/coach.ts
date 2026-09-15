@@ -72,6 +72,20 @@ export const LESSONS: Lesson[] = [
     when: (c) => c.phase === 'selected' && (c.selected?.riders.length ?? 0) > 0,
   },
   {
+    id: 'push',
+    title: 'You can force it — for a price',
+    body:
+      'Nothing in your hand pays this ledge exactly, so the red option overpays it. ' +
+      'Those cards are <b>burnt for good</b>, not discarded — they never come back. ' +
+      'A turn you cannot act on is now a choice about how much air it is worth.',
+    weight: 150,
+    sticky: true,
+    when: (c) =>
+      c.phase === 'selected' &&
+      (c.selected?.combos.length ?? 0) === 0 &&
+      (c.selected?.pushCombos.length ?? 0) > 0,
+  },
+  {
     id: 'leech',
     title: 'Or hitch a ride yourself',
     body:
