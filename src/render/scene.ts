@@ -9,7 +9,12 @@ import { buildWater } from './water.js';
 import { Timeline } from './timeline.js';
 import type { Stage } from './stage.js';
 
-const RISE = new Vector3(0, 9, 3);
+/**
+ * How far a diver rises when it surfaces. It used to overshoot to well above
+ * the trench nameplates, so a diver cashing out briefly floated over the
+ * labels; it now stops at the waterline, which is where surfacing means.
+ */
+const RISE = new Vector3(0, 4.0, 3);
 
 export class GameScene {
   readonly board: BoardView;

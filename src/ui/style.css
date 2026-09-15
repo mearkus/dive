@@ -109,6 +109,33 @@ html, body {
 #meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--dim); padding: 8px 12px; background: var(--panel); border-radius: 12px; }
 #meta .warn { color: var(--warn); font-weight: 700; }
 
+/* ---------- endgame ---------- */
+#finale {
+  justify-self: center;
+  align-self: start;
+  display: none;
+  margin-top: 4px;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #2b1a00;
+  background: linear-gradient(var(--warn), #e0a72f);
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .45);
+}
+#finale.show { display: block; animation: finale-in .4s ease-out both; }
+#finale.last { background: linear-gradient(#ff9f7a, #ff7a5c); color: #2a0c04; }
+@keyframes finale-in {
+  from { transform: translateY(-10px) scale(.92); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+/* A player one diver away from ending the dive. */
+.player.closing { box-shadow: 0 0 0 2px var(--warn), 0 6px 22px rgba(0, 0, 0, .45); }
+.player.closing .sub { color: var(--warn); font-weight: 700; }
+
 /* ---------- log ---------- */
 #log {
   align-self: end;
@@ -326,6 +353,7 @@ html, body {
 /* ---------- small screens ---------- */
 @media (max-width: 720px) {
   #log { width: min(240px, 50vw); max-height: 22vh; font-size: 11.5px; }
+  #finale { font-size: 11.5px; padding: 7px 13px; }
   .player { min-width: 78px; padding: 6px 9px; }
   .player .score { font-size: 17px; }
   .player .sub { display: none; }

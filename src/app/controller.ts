@@ -34,6 +34,8 @@ export class Controller {
   private locked = false;
   private coach: Coach;
   private coachVisible = false;
+  /** Players already flagged as one diver from ending the game. */
+  private warned = new Set<number>();
 
   constructor(
     private stage: Stage,
@@ -137,12 +139,35 @@ export class Controller {
         case 'trench-closed':
           this.sfx.closed();
           break;
+        case 'end-triggered':
+          this.sfx.finalRound();
+          break;
         case 'hand-refilled':
           if (event.player === this.viewSeat) this.sfx.deal(event.drawn.length);
           break;
         default:
           break;
       }
+    }
+  }
+
+  /**
+   * The end arrives with one to three turns of notice, which measured as far
+   * too little: about two of your own turns pass between someone reaching
+   * their last diver and the game ending. Call it out as soon as anyone is
+   * one dive away.
+   */
+  private warnClosing(): void {
+    if (this.state.endTriggeredBy !== null) return;
+    for (const player of this.state.players) {
+      if (this.warned.has(player.id)) continue;
+      const left = Object.values(this.state.divers).filter(
+        (d) => d.owner === player.id && d.pos.kind !== 'scored',
+      ).length;
+      if (left !== 1) continue;
+      this.warned.add(player.id);
+      const who = this.options.humanSeats.includes(player.id) ? 'You are' : `${player.name} is`;
+      this.hud.log(`${who} one dive from ending it — the last diver home starts the final round.`, 'bad');
     }
   }
 
@@ -173,9 +198,14 @@ export class Controller {
   /** Hand the turn to whoever is next: prompt the human, or run a bot. */
   private advance(): void {
     if (this.state.over) {
-      this.hud.setPrompt('The dive is over.');
+      this.hud.setPrompt('The dive is over — surfacing.');
       this.hud.clearOptions();
-      this.hud.showEnd(this.state, this.options.humanSeats, () => window.location.reload());
+      // A beat before the results, so the last move is seen rather than
+      // buried under a panel the instant it lands.
+      window.setTimeout(
+        () => this.hud.showEnd(this.state, this.options.humanSeats, () => window.location.reload()),
+        1100,
+      );
       return;
     }
 
@@ -233,6 +263,7 @@ export class Controller {
     this.hud.renderState(this.state, this.options.humanSeats);
     this.teach('after-action', { events: result.events });
     this.cue(result.events);
+    this.warnClosing();
     this.scene.play(this.state, result.events, () => {
       this.locked = false;
       this.sync();

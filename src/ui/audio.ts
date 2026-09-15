@@ -156,6 +156,14 @@ export class Sfx {
     this.hiss(ctx, 'lowpass', 320, 70, 0.85, 0.2);
   }
 
+  /** The end has been triggered — everyone gets one last turn. */
+  finalRound(): void {
+    const ctx = this.ready();
+    if (!ctx) return;
+    this.tone(ctx, 'triangle', 440, 660, 0.3, 0.14);
+    this.tone(ctx, 'triangle', 660, 880, 0.36, 0.12, 0.16);
+  }
+
   /** Cards leaving the hand. */
   spend(count: number): void {
     const ctx = this.ready();
