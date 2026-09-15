@@ -859,7 +859,11 @@ reducer and in a counter is a rule players do not know about.
 
 ## 11n. Experiment: personal decks, Gloomhaven-style
 
-Built as a rules variant, **off by default**, reachable at `?air=personal`.
+Built as a rules variant, **off by default**, chosen by a checkbox on the
+title screen (and still preselectable with `?air=personal` for a link). The
+choice is remembered, the rules card swaps to describe whichever game is being
+played, and the tutorial teaches the mode's own recovery rule rather than the
+shared-deck one.
 Each diver carries their own small supply instead of drawing from one shared
 deck. Surfacing for air recovers everything spent *minus* a couple of cards
 burnt for good; a diver whose supply cannot refill a hand is out of air and
@@ -903,6 +907,15 @@ rides fall to 16.7% and 40% of seats drown, because they were tuned for a
 shared deck and do not model air scarcity at all. Those numbers measure the
 bot, not the rule. Evaluating the version with the actual decision in it needs
 a bot that values its remaining supply first.
+
+### A trap worth remembering in the lesson list
+
+The personal-mode opening lesson originally fired on "all my divers are still
+at the surface" — the same moment as the welcome lesson, which outranks it.
+Only one lesson shows at a time, so it could never appear at all, and a
+browser run proved it: the personal game taught exactly the same lessons as
+the shared one. Lesson predicates compete, so a new lesson needs a moment
+that is *its own*; this one waits for the first diver to be in the water.
 
 ## 12. Stretch ideas (post-v1, keep out of the way for now)
 
