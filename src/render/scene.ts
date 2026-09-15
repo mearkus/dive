@@ -1,7 +1,7 @@
 import { Color, Group, Mesh, MeshStandardMaterial, Sprite, SpriteMaterial, Vector3 } from 'three';
 import type { GameEvent, GameState, LegalDescend } from '../rules/index.js';
-import { buildBoard, type BoardView } from './board.js';
-import { animateDiver, buildDiver, setDiverDimmed, type DiverView } from './divers.js';
+import { buildBoard, SHELF_TOP, type BoardView } from './board.js';
+import { animateDiver, buildDiver, MEEPLE_BASE, setDiverDimmed, type DiverView } from './divers.js';
 import { LEDGE_LEGAL, depthMix, LEDGE, LEDGE_DEEP } from './palette.js';
 import { costPlate, nameplate, treasurePlate } from './textures.js';
 import { LEDGE_DEPTH, LEDGE_DROP, LEDGE_WIDTH, SURFACE_Y, TRENCH_SPACING, diverSlotX, ledgeY, trenchX } from './layout.js';
@@ -27,6 +27,8 @@ export class GameScene {
   /** Base sprite scales, so label sizing stays idempotent across frames. */
   private labelScale = 1;
   private lastBoost = 1;
+  /** Last state placed, so a zoom can re-seat divers without an action. */
+  private lastState: GameState | null = null;
 
   private stage: Stage;
 
@@ -120,12 +122,27 @@ export class GameScene {
       const base = view.badge.userData.base ?? 0.46;
       view.badge.scale.set(base * k, base * 0.76 * k, 1);
     }
-    // Diver size follows the same retreat as the labels.
-    for (const view of this.divers.values()) {
-      const current = view.group.scale.x;
-      if (current > 0) view.group.scale.setScalar((current / this.lastBoost) * this.diverBoost());
+    // Diver size follows the same retreat as the labels — and because the
+    // standing height depends on that size, they must be re-seated too, or
+    // they sink into the shelf as they grow.
+    if (this.lastBoost !== this.diverBoost()) {
+      this.lastBoost = this.diverBoost();
+      this.reseat();
     }
-    this.lastBoost = this.diverBoost();
+  }
+
+  /** Recompute diver size and footing for the current camera, without an action. */
+  private reseat(): void {
+    const state = this.lastState;
+    if (!state) return;
+    const settled = !this.timeline.busy;
+    for (const id of this.divers.keys()) {
+      const view = this.divers.get(id);
+      if (!view) continue;
+      const pos = this.positionFor(state, id);
+      view.target.copy(pos);
+      if (settled) view.group.position.copy(pos);
+    }
   }
 
   /** Where a diver belongs right now, in world space. */
@@ -140,13 +157,15 @@ export class GameScene {
       const crowd = Math.max(1, stack.length);
       const view = this.divers.get(id);
       const crowding = crowd > 4 ? 1.05 : crowd > 2 ? 1.25 : 1.45;
-      if (view) view.group.scale.setScalar(crowding * this.diverBoost());
+      const scale = crowding * this.diverBoost();
+      if (view) view.group.scale.setScalar(scale);
       return new Vector3(
         trenchX(trench.id, count) + diverSlotX(slot, crowd),
-        // Each later arrival rides a little higher on the line, so "landed
-        // after you" reads as "above you" on the board — the rule is written
-        // that way, and a flat row gave it no visual meaning at all.
-        ledgeY(diver.pos.ledge) + 0.18 + Math.min(slot, 4) * 0.14,
+        // Stand the meeple ON the shelf. This used to be a fixed +0.18, tuned
+        // for the old capsule and not scaled with the piece, so every diver
+        // was sunk a quarter of a unit into the slab — and half a unit at the
+        // larger sizes a phone uses.
+        ledgeY(diver.pos.ledge) + SHELF_TOP - MEEPLE_BASE * scale + Math.min(slot, 4) * 0.14,
         // Alternate front/back so neighbouring badges never sit flush.
         LEDGE_DEPTH * 0.1 + (slot % 2) * 0.62,
       );
@@ -171,6 +190,7 @@ export class GameScene {
   }
 
   placeAll(state: GameState, instant = false): void {
+    this.lastState = state;
     for (const [id, view] of this.divers) {
       const pos = this.positionFor(state, id);
       view.target.copy(pos);

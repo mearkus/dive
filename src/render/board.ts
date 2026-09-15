@@ -106,6 +106,12 @@ function kelpBlade(seed: number): ExtrudeGeometry {
   return new ExtrudeGeometry(shape, { depth: 0.045, bevelEnabled: false, curveSegments: 10 });
 }
 
+/** Slab underside, group-local. Its top face is SHELF_Y + SHELF_THICKNESS. */
+export const SHELF_Y = -0.42;
+export const SHELF_THICKNESS = 0.34;
+/** The surface a diver stands on, group-local. */
+export const SHELF_TOP = SHELF_Y + SHELF_THICKNESS;
+
 export function buildBoard(state: GameState): BoardView {
   const root = new Group();
   const ledges: LedgeView[] = [];
@@ -245,7 +251,7 @@ export function buildBoard(state: GameState): BoardView {
           emissive: new Color(0x000000),
         }),
       );
-      shelf.position.y = -0.42;
+      shelf.position.y = SHELF_Y;
       group.add(shelf);
 
       const lip = new Mesh(
@@ -263,9 +269,12 @@ export function buildBoard(state: GameState): BoardView {
         const nub = new Mesh(
           new BoxGeometry(0.13 + t * 0.14, 0.18 + t * 0.34, 0.12 + t * 0.12),
           new MeshStandardMaterial({
-            color: n % 2 ? 0xe07f68 : 0x7fd4b6,
+            color: n % 2 ? 0xff9878 : 0x8fe8c6,
             roughness: 1,
             flatShading: true,
+            // Same problem the kelp had: small dark shapes on dark rock are
+            // just rock.
+            emissive: new Color(n % 2 ? 0xff9878 : 0x8fe8c6).multiplyScalar(0.3),
           }),
         );
         nub.position.set(-LEDGE_WIDTH / 2 + 0.5 + t * (LEDGE_WIDTH - 1.2), -0.2, LEDGE_DEPTH / 2 - 0.35 - t * 0.5);
@@ -299,7 +308,7 @@ export function buildBoard(state: GameState): BoardView {
             bevelSegments: 1,
             curveSegments: 8,
           }),
-          new MeshStandardMaterial({ color: 0x2f2a1c, roughness: 1, flatShading: true }),
+          new MeshStandardMaterial({ color: 0x6b5a38, roughness: 1, flatShading: true }),
         );
         hull.position.set(0.2, -0.02, -LEDGE_DEPTH * 0.36);
         hull.rotation.z = -0.07;
@@ -308,7 +317,7 @@ export function buildBoard(state: GameState): BoardView {
         for (let rib = -1; rib <= 1; rib++) {
           const timber = new Mesh(
             new BoxGeometry(0.09, 0.82, LEDGE_DEPTH * 0.78),
-            new MeshStandardMaterial({ color: 0x413826, roughness: 1 }),
+            new MeshStandardMaterial({ color: 0x8a7346, roughness: 1 }),
           );
           timber.position.set(0.2 + rib * 0.85, 0.06, 0);
           timber.rotation.z = -0.07;

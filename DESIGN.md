@@ -805,6 +805,32 @@ true, for separate reasons:
   starting in mid-water, and a few grow from the walls further down so the
   planting does not stop dead at the rim.
 
+## 11l. Divers stood in the ledges, not on them
+
+Spotted as the meeples overlaying the shelves. They were: the standing height
+was a fixed `+0.18` above the ledge, a constant tuned for the old capsule and
+never revisited when the piece became a meeple with a different origin. The
+meeple's feet sit 0.36 below its group origin *before* the group is scaled, so
+the error grew with the piece:
+
+| diver scale | feet | sunk into the slab by |
+| --- | --- | --- |
+| 1.45 (normal) | -0.34 | 0.26 |
+| 2.17 (phone) | -0.61 | 0.53 |
+
+Which is why it looked worst on a phone, where divers are scaled up to stay
+findable. The height is now derived: shelf top, plus the meeple's base offset
+multiplied by the piece's current scale. Feet land exactly on the slab at
+every size.
+
+That coupling needed one more thing. Diver scale follows camera distance, so
+a zoom changes the scale without any game action — and a diver that grows
+without being re-seated sinks again. Zooming now re-seats them.
+
+Also brightened, for the reason the kelp needed brightening: the coral nubs
+were small dark shapes on dark rock, and the wreck hull was dark enough that
+the treasure coins were doing all the work of marking the trench floor.
+
 ## 12. Stretch ideas (post-v1, keep out of the way for now)
 
 - **Current cards**: an event deck that reshuffles ledge costs mid-game.
