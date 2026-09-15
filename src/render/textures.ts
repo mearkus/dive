@@ -60,27 +60,35 @@ export function costPlate(value: number, legal: boolean): Texture {
   return tex;
 }
 
-/** Player letter badge worn by each diver — the colour-blind fallback. */
+/**
+ * The mark worn by each diver. Deliberately not a filled disc in the player's
+ * colour: the meeple beneath it is already that colour, so the disc repeated
+ * information while being the largest thing on screen per diver. A small dark
+ * chip with a white letter carries the identity — which is also the
+ * colour-blind fallback — at a fraction of the visual weight.
+ */
 export function diverBadge(letter: string, css: string): Texture {
   const key = `badge:${letter}:${css}`;
   const hit = cache.get(key);
   if (hit) return hit;
 
-  const S = 128;
-  const [c, ctx] = canvas(S, S);
+  const W = 128;
+  const H = 96;
+  const [c, ctx] = canvas(W, H);
+
   ctx.beginPath();
-  ctx.arc(S / 2, S / 2, S / 2 - 8, 0, Math.PI * 2);
-  ctx.fillStyle = css;
+  ctx.roundRect(22, 14, W - 44, H - 28, 16);
+  ctx.fillStyle = 'rgba(6, 22, 30, 0.82)';
   ctx.fill();
-  ctx.lineWidth = 7;
-  ctx.strokeStyle = 'rgba(4,20,28,0.85)';
+  ctx.lineWidth = 3.5;
+  ctx.strokeStyle = css;
   ctx.stroke();
 
-  ctx.fillStyle = '#06202a';
-  ctx.font = `800 ${S * 0.6}px ui-sans-serif, system-ui, sans-serif`;
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `800 ${H * 0.52}px ui-sans-serif, system-ui, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(letter, S / 2, S / 2 + S * 0.04);
+  ctx.fillText(letter, W / 2, H / 2 + 2);
 
   const tex = finish(c);
   cache.set(key, tex);

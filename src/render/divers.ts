@@ -117,8 +117,8 @@ export function buildDiver(id: string, owner: number): DiverView {
       fog: false,
     }),
   );
-  badge.position.set(0, 0.66, 0);
-  badge.scale.set(0.5, 0.5, 1);
+  badge.position.set(0, 0.62, 0);
+  badge.scale.set(0.46, 0.35, 1);
   group.add(badge);
 
   return {

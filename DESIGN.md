@@ -765,6 +765,29 @@ was notice:
 Worth keeping in mind if the end is ever retuned: at two players the final
 round is a single turn, and about half the time it is not yours.
 
+## 11j. Are the meeples enough on their own?
+
+Asked because the numbers and marks together read as busy. Measured where
+divers actually stand, over 1,452 board samples at three players:
+
+| where | share of visible divers | does identity matter |
+| --- | --- | --- |
+| waiting at the surface | 23% | no — they are interchangeable |
+| alone on a ledge | 15% | colour alone says whose |
+| sharing a ledge | 62% | yes — order decides who tows whom |
+
+So the marks cannot simply go: most divers on screen are in exactly the
+situation where knowing whose diver is whose, and in what order, is the
+whole decision.
+
+What was redundant was not the letter but the **colour**. The badge was a
+filled disc in the player's colour floating directly above a meeple in the
+same colour — the largest element per diver, repeating what the piece already
+said. It is now a small dark chip with a white letter and a thin coloured
+edge: identity and the colour-blind fallback intact, a fraction of the weight.
+Divers waiting at the surface lose their mark entirely, which clears the
+densest cluster on the board.
+
 ## 12. Stretch ideas (post-v1, keep out of the way for now)
 
 - **Current cards**: an event deck that reshuffles ledge costs mid-game.
