@@ -30,8 +30,10 @@ export class Hud {
     this.players.innerHTML = '';
     for (const row of standings(state).sort((a, b) => a.player - b.player)) {
       const active = row.player === state.current && !state.over;
+      // One diver from surfacing their last is one diver from ending the game.
+      const closing = row.stranded === 1 && state.endTriggeredBy === null;
       const card = document.createElement('div');
-      card.className = `player${active ? ' active' : ''}`;
+      card.className = `player${active ? ' active' : ''}${closing ? ' closing' : ''}`;
       card.style.setProperty('--c', PLAYER_CSS[row.player % PLAYER_CSS.length]);
       card.innerHTML =
         `<span class="dot">${String.fromCharCode(65 + row.player)}</span>` +
@@ -44,8 +46,9 @@ export class Hud {
     const open = state.trenches.filter((t) => !t.closed).length;
     this.meta.innerHTML =
       `<span>turn ${state.turn}</span>` +
-      `<span>${open}/${state.trenches.length} trenches open</span>` +
-      (state.endTriggeredBy !== null ? `<span class="warn">final round</span>` : '');
+      `<span>${open}/${state.trenches.length} trenches open</span>`;
+
+    this.renderFinale(state, humanSeats);
   }
 
   /**
@@ -69,6 +72,27 @@ export class Hud {
 
   hideCoach(): void {
     this.coach.classList.remove('show');
+  }
+
+  /**
+   * The end used to be announced by two small words in the meta strip, with
+   * only one to three turns left in the whole game. It gets a banner and a
+   * count now.
+   */
+  private renderFinale(state: GameState, humanSeats: number[]): void {
+    const banner = el('finale');
+    if (state.endTriggeredBy === null || state.over) {
+      banner.classList.remove('show', 'last');
+      return;
+    }
+    const seats = state.players.length;
+    const left = ((state.endTriggeredBy - state.current + seats) % seats) || seats;
+    const yours = humanSeats.includes(state.current);
+    banner.classList.add('show');
+    banner.classList.toggle('last', yours);
+    banner.textContent = yours
+      ? 'Final round — your last turn'
+      : `Final round — ${left} turn${left === 1 ? '' : 's'} left`;
   }
 
   setPrompt(html: string): void {

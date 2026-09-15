@@ -732,6 +732,39 @@ along its front edge, which survives being eight pixels tall where a shaded
 slab does not, and divers grow as the camera retreats, on the same principle
 as the labels.
 
+## 11i. The endgame felt abrupt, and it was
+
+Reported as the game ending abruptly. Measured over 300 games per player
+count before changing anything, and the complaint holds:
+
+| | 2p | 3p | 4p |
+| --- | --- | --- | --- |
+| your own turns between "someone has one diver left" and the trigger | 2.7 | 1.8 | 1.6 |
+| turns left after the trigger (whole table) | 1 | 2 | 3 |
+| games where seat A gets a final turn at all | 51% | 65% | 74% |
+
+Every single game ends by all-surfaced; the air clock and trenches-closed
+conditions never fire in practice. So the whole endgame is: someone lands
+their last diver, one to three turns happen, it is over. That was announced
+by the words "final round" in the meta strip.
+
+The rule is unchanged — it is already fair, and the trigger player correctly
+gets no further turn because they have nothing left to move. What was missing
+was notice:
+
+- **An earlier warning.** The moment any player is down to one diver in the
+  water, the log says so and their HUD chip is ringed amber. That roughly
+  doubles the useful warning, because the dangerous moment is before the
+  trigger, not after.
+- **A banner with a count.** "Final round — 2 turns left", counting down, and
+  "your last turn" in a different colour when it is yours.
+- **A cue**, so it registers without reading.
+- **A beat before the results.** The panel used to cover the final move the
+  instant it landed.
+
+Worth keeping in mind if the end is ever retuned: at two players the final
+round is a single turn, and about half the time it is not yours.
+
 ## 12. Stretch ideas (post-v1, keep out of the way for now)
 
 - **Current cards**: an event deck that reshuffles ledge costs mid-game.
