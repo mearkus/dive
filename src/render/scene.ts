@@ -2,7 +2,7 @@ import { Color, Group, Mesh, MeshStandardMaterial, Sprite, SpriteMaterial, Vecto
 import type { GameEvent, GameState, LegalDescend } from '../rules/index.js';
 import { buildBoard, type BoardView } from './board.js';
 import { animateDiver, buildDiver, setDiverDimmed, type DiverView } from './divers.js';
-import { LEDGE_LEGAL, depthMix, LEDGE, ROCK } from './palette.js';
+import { LEDGE_LEGAL, depthMix, LEDGE, LEDGE_DEEP } from './palette.js';
 import { costPlate, nameplate, treasurePlate } from './textures.js';
 import { LEDGE_DEPTH, LEDGE_DROP, LEDGE_WIDTH, SURFACE_Y, TRENCH_SPACING, diverSlotX, ledgeY, trenchX } from './layout.js';
 import { buildWater } from './water.js';
@@ -21,6 +21,7 @@ export class GameScene {
   private reducedMotion: boolean;
   /** Base sprite scales, so label sizing stays idempotent across frames. */
   private labelScale = 1;
+  private lastBoost = 1;
 
   private stage: Stage;
 
@@ -83,6 +84,11 @@ export class GameScene {
     }
   }
 
+  /** Grow divers as the camera retreats, so they survive a phone-sized board. */
+  private diverBoost(): number {
+    return Math.min(1.5, Math.max(1, this.labelScale * 0.72));
+  }
+
   private applyLabelScale(): void {
     const k = this.labelScale;
     for (const ledge of this.board.ledges) {
@@ -108,6 +114,12 @@ export class GameScene {
       const base = view.badge.userData.base ?? 0.5;
       view.badge.scale.set(base * k, base * k, 1);
     }
+    // Diver size follows the same retreat as the labels.
+    for (const view of this.divers.values()) {
+      const current = view.group.scale.x;
+      if (current > 0) view.group.scale.setScalar((current / this.lastBoost) * this.diverBoost());
+    }
+    this.lastBoost = this.diverBoost();
   }
 
   /** Where a diver belongs right now, in world space. */
@@ -121,7 +133,8 @@ export class GameScene {
       const slot = Math.max(0, stack.indexOf(id));
       const crowd = Math.max(1, stack.length);
       const view = this.divers.get(id);
-      if (view) view.group.scale.setScalar(crowd > 4 ? 1.05 : crowd > 2 ? 1.25 : 1.45);
+      const crowding = crowd > 4 ? 1.05 : crowd > 2 ? 1.25 : 1.45;
+      if (view) view.group.scale.setScalar(crowding * this.diverBoost());
       return new Vector3(
         trenchX(trench.id, count) + diverSlotX(slot, crowd),
         // Each later arrival rides a little higher on the line, so "landed
@@ -211,8 +224,9 @@ export class GameScene {
     for (const ledge of this.board.ledges) {
       const t = state.trenches[ledge.trench];
       const material = ledge.shelf.material as MeshStandardMaterial;
+      // A closed trench reads as dead grey, but must still be visible.
       material.color.setHex(
-        t.closed ? depthMix(ROCK, 0x0d1b22, 0.6) : depthMix(LEDGE, ROCK, ledge.ledge / 8),
+        t.closed ? 0x33404a : depthMix(LEDGE, LEDGE_DEEP, ledge.ledge / 8),
       );
     }
   }

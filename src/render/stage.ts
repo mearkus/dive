@@ -13,7 +13,7 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { WATER_DEEP, WATER_SHALLOW } from './palette.js';
+import { WATER_SHALLOW } from './palette.js';
 import { waterBackdrop } from './textures.js';
 import { fitDistance, frameFor, verticalExtent } from './layout.js';
 
@@ -45,7 +45,9 @@ export function createStage(canvas: HTMLCanvasElement, trenchCount: number, maxD
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality === 'high' ? 2 : 1.5));
 
   const scene = new Scene();
-  scene.fog = new FogExp2(WATER_DEEP, 0.021);
+  // Density is set per-frame-size in resize(): see the note there.
+  const fog = new FogExp2(0x0a2230, 0.0118);
+  scene.fog = fog;
   scene.background = waterBackdrop();
 
   const frame = frameFor(trenchCount, maxDepth);
@@ -64,12 +66,12 @@ export function createStage(canvas: HTMLCanvasElement, trenchCount: number, maxD
   controls.enablePan = false;
   controls.update();
 
-  scene.add(new HemisphereLight(WATER_SHALLOW, 0x04121a, 1.15));
-  scene.add(new AmbientLight(0x2e6f86, 0.55));
-  const sun = new DirectionalLight(0xaef0ff, 1.5);
+  scene.add(new HemisphereLight(WATER_SHALLOW, 0x0a1f2a, 1.55));
+  scene.add(new AmbientLight(0x3a7f96, 0.78));
+  const sun = new DirectionalLight(0xaef0ff, 1.75);
   sun.position.set(3, 24, 12);
   scene.add(sun);
-  const fill = new DirectionalLight(0x2a7f9e, 0.5);
+  const fill = new DirectionalLight(0x3a92b2, 0.7);
   fill.position.set(-8, -6, 10);
   scene.add(fill);
 
@@ -129,6 +131,13 @@ export function createStage(canvas: HTMLCanvasElement, trenchCount: number, maxD
     const visible = 2 * distance * Math.tan((camera.fov * Math.PI) / 360);
     const band = (top + (1 - bottom)) / 2;
     controls.target.y = verticalExtent(maxDepth).center - visible * (0.5 - band);
+
+    // Fog thins as the camera retreats. FogExp2 is distance-based, so fitting
+    // the same board onto a narrow phone — which needs roughly twice the
+    // camera distance — was washing the whole board out in proportion to how
+    // small the screen was. Scaling density by distance keeps the haze looking
+    // the same everywhere.
+    fog.density = 0.44 / Math.max(1, distance);
 
     const direction = camera.position.clone().sub(controls.target).normalize();
     camera.position.copy(controls.target).addScaledVector(direction, distance);

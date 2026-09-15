@@ -704,6 +704,34 @@ must stay readable.
 The passes are ~19 kB and load on demand, so only the top tier downloads them.
 `?quality=low|medium|high` forces a tier, which is also how this was compared.
 
+## 11h. Why the board was hard to see on a phone
+
+Reported as objects being hard to make out on mobile. Four separate causes,
+none of them "make it brighter":
+
+1. **Deep ledges were tinted to the wall colour.** Shelf colour interpolated
+   `LEDGE -> ROCK` by depth, so the deepest shelf of a trench was 100% rock —
+   literally the colour of the wall behind it. Ledges now fade toward a
+   dedicated deep-ledge tone and never converge on the rock.
+2. **Fog is distance-based, so small screens were punished.** `FogExp2`
+   attenuates by camera distance, and fitting the same board onto a narrow
+   phone needs roughly twice the distance: about 59% fog against 17% on a
+   wide screen. The board washed out in proportion to how small the screen
+   was. Density is now derived from the fitted distance, so the haze looks
+   the same everywhere.
+3. **The rock material multiplied itself dark.** A textured `MeshStandard`
+   multiplies map by colour, and the wall tinted a dark rock texture with a
+   dark rock colour — the two compounded to near-black and took the strata
+   with them. The texture carries the hue now; the colour only trims it.
+4. **Player colour vanished in shadow.** A meeple lit only by dim ambient
+   loses the one thing about it that carries information. Each suit now
+   carries a little emissive of its own colour.
+
+Two additions aimed at small screens specifically: every shelf has a lit lip
+along its front edge, which survives being eight pixels tall where a shaded
+slab does not, and divers grow as the camera retreats, on the same principle
+as the labels.
+
 ## 12. Stretch ideas (post-v1, keep out of the way for now)
 
 - **Current cards**: an event deck that reshuffles ledge costs mid-game.
