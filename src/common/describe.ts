@@ -33,6 +33,15 @@ export function narrate(state: GameState, event: GameEvent): Narration | null {
         : { text: `${event.diver} reaches the wreck — stripped bare, nothing left`, tone: 'bad' };
     case 'deck-reshuffled':
       return { text: `The spent air is shuffled back into the deck — ${event.size} cards`, tone: 'normal' };
+    case 'air-recovered':
+      return {
+        text:
+          `${name(event.player)} surfaces for air — ${event.recovered} cards back, ` +
+          `${event.burnt.join('+') || 'none'} burnt for good`,
+        tone: 'bad',
+      };
+    case 'out-of-air':
+      return { text: `${name(event.player)} is out of air and is pulled out`, tone: 'bad' };
     case 'trench-closed':
       return { text: `${trench(event.trench)} is picked clean and closes`, tone: 'bad' };
     case 'divers-recalled':

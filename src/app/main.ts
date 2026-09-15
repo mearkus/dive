@@ -41,7 +41,10 @@ function begin(): void {
   // Must precede the scene: the board bakes ledge positions at build time.
   configureLayout(window.innerWidth / Math.max(1, window.innerHeight));
 
-  const state = newGame(seed, players);
+  // Experimental: ?air=personal gives each diver their own small supply that
+  // burns down, instead of one shared deck. See DESIGN.md 11n.
+  const airMode = params.get('air') === 'personal' ? 'personal' : 'shared';
+  const state = newGame(seed, players, { airMode });
   const quality = detectQuality();
   const maxDepth = Math.max(...state.trenches.map((t) => t.depth));
 

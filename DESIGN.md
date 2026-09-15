@@ -857,6 +857,53 @@ the log says how many cards went back in. Flyers are skipped under
 The general lesson, repeated from the endgame: a rule that exists only in the
 reducer and in a counter is a rule players do not know about.
 
+## 11n. Experiment: personal decks, Gloomhaven-style
+
+Built as a rules variant, **off by default**, reachable at `?air=personal`.
+Each diver carries their own small supply instead of drawing from one shared
+deck. Surfacing for air recovers everything spent *minus* a couple of cards
+burnt for good; a diver whose supply cannot refill a hand is out of air and
+pulled out of the water. That is Gloomhaven's rest-and-lose-a-card loop, and
+"air that does not come back" fits this theme better than it has any right to.
+
+Measured at three players, 250 games each, against the shared-deck baseline
+(16.5 turns/player, 9.3% forced refresh, 21.4% free rides, mean score 10.1):
+
+| supply / burn | ran out of air | forced refresh | free rides | mean score |
+| --- | --- | --- | --- | --- |
+| 10 / 1 | 0.5% | 16.0% | 21.8% | 10.3 |
+| 10 / 2 | 41.9% | 20.3% | 21.9% | 8.9 |
+| 12 / 1 | 0.0% | 13.6% | 22.3% | 10.6 |
+| **12 / 2** | **10.1%** | 15.8% | 22.1% | 10.3 |
+| 12 / 3 | 51.7% | 17.8% | 21.5% | 8.8 |
+| 14 / 2 | 0.7% | 12.4% | 22.7% | 10.1 |
+
+Three findings:
+
+**The free ride is untouched.** 21–23% of movement in every configuration,
+against 21.4% shared. The mechanic the game rests on does not care where the
+cards come from, which is the main thing worth knowing before adopting this.
+
+**The burn rate is a cliff, not a dial.** Either almost nobody runs dry or
+about half the table does; only a narrow band around 12/2 makes running out a
+real but uncommon threat. A designer tuning this should expect to land on one
+side or the other rather than to steer smoothly.
+
+**It costs payability.** Forced refreshes rise from 9.3% to 12–20%, because a
+12-card supply refills a five-card hand roughly twice before it needs
+recovering. At the interesting settings that is above the 15% line §10 sets
+for retuning, so adopting this properly would mean revisiting the deck
+weighting.
+
+**What is not yet measured.** In Gloomhaven, resting is a decision you time —
+push on with a bad hand, or spend the turn and burn the air. Here recovery
+only fires when you are already stuck, so that decision does not exist.
+Making it voluntary is a config flag away, and the bots play it badly: free
+rides fall to 16.7% and 40% of seats drown, because they were tuned for a
+shared deck and do not model air scarcity at all. Those numbers measure the
+bot, not the rule. Evaluating the version with the actual decision in it needs
+a bot that values its remaining supply first.
+
 ## 12. Stretch ideas (post-v1, keep out of the way for now)
 
 - **Current cards**: an event deck that reshuffles ledge costs mid-game.
