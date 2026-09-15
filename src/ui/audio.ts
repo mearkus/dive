@@ -156,6 +156,14 @@ export class Sfx {
     this.hiss(ctx, 'lowpass', 320, 70, 0.85, 0.2);
   }
 
+  /** The spent pile going back into the deck. */
+  reshuffle(): void {
+    const ctx = this.ready();
+    if (!ctx) return;
+    this.hiss(ctx, 'highpass', 1800, 700, 0.42, 0.1);
+    for (let i = 0; i < 7; i++) this.tone(ctx, 'square', 900 - i * 40, 520, 0.035, 0.03, i * 0.045);
+  }
+
   /** The end has been triggered — everyone gets one last turn. */
   finalRound(): void {
     const ctx = this.ready();

@@ -142,6 +142,9 @@ export class Controller {
         case 'end-triggered':
           this.sfx.finalRound();
           break;
+        case 'deck-reshuffled':
+          this.sfx.reshuffle();
+          break;
         case 'hand-refilled':
           if (event.player === this.viewSeat) this.sfx.deal(event.drawn.length);
           break;
@@ -245,14 +248,13 @@ export class Controller {
     const before = this.state;
     const result = apply(before, action);
 
-    // Fly the cards the viewer just spent into the discard, before the hand
-    // is rebuilt underneath them.
-    if (before.current === this.viewSeat) {
-      for (const event of result.events) {
-        if (event.t === 'cards-spent' || event.t === 'hand-discarded') {
-          this.hud.spendCards(event.values);
-        }
-      }
+    // Show the cards moving. The viewer's own leave the hand rail; everyone
+    // else's fly from their HUD chip, because the deck is shared and that was
+    // invisible when an opponent's spend changed nothing but a count.
+    for (const event of result.events) {
+      if (event.t !== 'cards-spent' && event.t !== 'hand-discarded') continue;
+      if (before.current === this.viewSeat) this.hud.spendCards(event.values);
+      else this.hud.opponentSpends(before.current, event.values.length);
     }
     for (const event of result.events) {
       const line = narrate(before, event);
@@ -264,6 +266,12 @@ export class Controller {
     this.teach('after-action', { events: result.events });
     this.cue(result.events);
     this.warnClosing();
+
+    // The discard emptying back into the deck is the clearest evidence the
+    // deck is shared, and it used to happen in complete silence.
+    if (result.events.some((e) => e.t === 'deck-reshuffled')) {
+      window.setTimeout(() => this.hud.reshuffle(), 260);
+    }
     this.scene.play(this.state, result.events, () => {
       this.locked = false;
       this.sync();

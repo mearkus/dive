@@ -255,6 +255,19 @@ html, body {
 }
 .card.spending { animation: spend .36s ease-in both; pointer-events: none; }
 
+/* Cards in transit between a player and the shared piles. */
+.flyer {
+  position: fixed;
+  z-index: 40;
+  width: 26px; height: 36px;
+  border-radius: 5px;
+  background: repeating-linear-gradient(-45deg, #0d3a4c 0 4px, #0a2c3b 4px 8px);
+  border: 1px solid rgba(150, 225, 245, .55);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, .5);
+  pointer-events: none;
+  transition: transform .5s cubic-bezier(.3,.7,.4,1), opacity .5s ease;
+}
+
 /* ---------- deck and discard ---------- */
 .pile {
   flex: none;

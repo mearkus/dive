@@ -31,6 +31,8 @@ export function narrate(state: GameState, event: GameEvent): Narration | null {
       return event.value > 0
         ? { text: `${event.diver} reaches the wreck and surfaces with ${event.value}`, tone: 'good' }
         : { text: `${event.diver} reaches the wreck — stripped bare, nothing left`, tone: 'bad' };
+    case 'deck-reshuffled':
+      return { text: `The spent air is shuffled back into the deck — ${event.size} cards`, tone: 'normal' };
     case 'trench-closed':
       return { text: `${trench(event.trench)} is picked clean and closes`, tone: 'bad' };
     case 'divers-recalled':
