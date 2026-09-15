@@ -195,13 +195,14 @@ export class Controller {
     // In personal mode the piles are the viewer's own supply, not the table's.
     const seat = this.state.players[this.viewSeat];
     const personal = this.state.config.airMode === 'personal';
+    const burnt = seat.lost.length;
     const deck = personal ? seat.deck : this.state.deck;
     const discard = personal ? seat.discard : this.state.discard;
     this.hud.setPiles(
       deck.length,
       discard.length,
       discard[discard.length - 1],
-      personal ? seat.lost.length : 0,
+      personal || this.state.config.pushOn ? burnt : 0,
     );
   }
 
@@ -339,17 +340,28 @@ export class Controller {
     this.hud.setPrompt(this.hud.describeTarget(descend, this.state));
 
     const hand = this.state.players[this.state.current].hand;
+    const pay = (combo: number[]): void => {
+      this.dispatch({ kind: 'descend', diver: descend.diver, cards: combo, trench: descend.trench });
+    };
+
     const options: PayOption[] = descend.combos.map((combo) => ({
       label: `<b>${combo.map((i) => hand[i]).join(' + ')}</b><small>pay ${descend.cost}</small>`,
       cardIndices: combo,
-      onPick: () =>
-        this.dispatch({
-          kind: 'descend',
-          diver: descend.diver,
-          cards: combo,
-          trench: descend.trench,
-        }),
+      onPick: () => pay(combo),
     }));
+
+    // Pushes come last and are marked: they burn what they spend.
+    for (const combo of descend.pushCombos) {
+      const total = combo.reduce((sum, i) => sum + hand[i], 0);
+      options.push({
+        label:
+          `<b>${combo.map((i) => hand[i]).join(' + ')}</b>` +
+          `<small>burn ${total} to force ${descend.cost}</small>`,
+        cardIndices: combo,
+        danger: true,
+        onPick: () => pay(combo),
+      });
+    }
     options.push({ label: '<small>cancel</small>', cardIndices: [], onPick: () => this.clearSelection() });
 
     this.hud.setOptions(options, (indices) => this.hud.setHand(hand, indices));

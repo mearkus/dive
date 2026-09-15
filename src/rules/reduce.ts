@@ -147,14 +147,31 @@ function applyDescend(state: GameState, action: Action & { kind: 'descend' }, ev
     if (!Number.isInteger(i) || i < 0 || i >= player.hand.length) illegal(`no card at hand index ${i}`);
     sum += player.hand[i];
   }
-  if (sum !== cost) illegal(`payment must total exactly ${cost}, got ${sum}`);
+  const pushing = sum > cost && state.config.pushOn;
+  if (sum !== cost && !pushing) illegal(`payment must total exactly ${cost}, got ${sum}`);
+  if (pushing) {
+    // Only a minimal overpay: a push may not burn a card it did not need to.
+    const wasteful = indices.some((i) => sum - player.hand[i] >= cost);
+    if (wasteful) illegal('a push may not spend more cards than it needs');
+  }
 
   const spent = indices.map((i) => player.hand[i]);
   for (let n = indices.length - 1; n >= 0; n--) player.hand.splice(indices[n], 1);
-  if (state.config.airMode === 'personal') player.discard.push(...spent);
-  else state.discard.push(...spent);
+
+  if (pushing) {
+    // Forcing a ledge burns the air outright — it does not come back.
+    player.lost.push(...spent);
+    state.stats.burnt[state.current] += spent.length;
+    state.stats.pushes[state.current] += 1;
+    events.push({ t: 'pushed-on', player: state.current, values: spent, cost });
+  } else if (state.config.airMode === 'personal') {
+    player.discard.push(...spent);
+    events.push({ t: 'cards-spent', player: state.current, values: spent });
+  } else {
+    state.discard.push(...spent);
+    events.push({ t: 'cards-spent', player: state.current, values: spent });
+  }
   state.stats.cardsSpent[state.current] += spent.length;
-  events.push({ t: 'cards-spent', player: state.current, values: spent });
 
   // The line rule: everyone clipped above the mover comes along for free.
   const group = fromLedge === 0 ? [diver.id] : movingGroup(state, trench, fromLedge, diver.id);

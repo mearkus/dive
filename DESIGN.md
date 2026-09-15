@@ -917,6 +917,41 @@ browser run proved it: the personal game taught exactly the same lessons as
 the shared one. Lesson predicates compete, so a new lesson needs a moment
 that is *its own*; this one waits for the first diver to be in the water.
 
+## 11o. Pushing on: turning a dead turn into a decision
+
+Proposed after playing the personal-supply variant: being forced to spend a
+turn recovering when nothing is payable is the least interesting thing that
+can happen on your go.
+
+Implemented as **push on** — a title-screen option in either air mode. When
+no combination pays a ledge exactly you may overpay to force it, and
+everything spent on a push is **burnt for good** rather than discarded. A push
+must be minimal: it may never spend a card it did not need. Exact payment
+therefore stays the efficient line, and the ledge numbers keep their meaning,
+which a flat toll would have thrown away.
+
+Measured at 250-400 games per setting:
+
+| | forced dead turns | pushes | free rides | mean score | turns/game |
+| --- | --- | --- | --- | --- | --- |
+| shared, no push | 9.4% | — | 21.4% | 10.1 | 49.7 |
+| **shared + push** | **2.6%** | 14% of descents | 21.3% | 9.9 | 46.0 |
+| personal 12/2, no push | 15.8% | — | 22.1% | 10.3 | — |
+| personal 12/2 + push | 12.6% | 18.5% of descents | 21.3% | 10.3 | — |
+
+**In the shared game it very nearly eliminates the dead turn**, 9.4% down to
+2.6%, at almost no cost elsewhere: free rides unmoved, score unmoved, games
+slightly shorter. At 2 and 4 players dead turns land at 1.5% and 3.8%.
+
+**In personal mode the trade is sharper.** Pushes burn supply, so running dry
+climbs from 10.1% to 18.7% of seats. That is the interesting version: the
+escape valve costs you the endgame.
+
+Caveats worth keeping: burnt cards leave the shared deck permanently, so the
+common supply erodes over a game (reshuffles fall from 1.3 to 0.9 per game);
+and seat win rates stay within noise but the two-player split reads 45/55
+across 250 games, which is not enough to call fair.
+
 ## 12. Stretch ideas (post-v1, keep out of the way for now)
 
 - **Current cards**: an event deck that reshuffles ledge costs mid-game.

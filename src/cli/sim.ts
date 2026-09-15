@@ -31,6 +31,7 @@ interface Options {
   airMode: 'shared' | 'personal';
   personalDeckSize: number;
   lossPerRecovery: number;
+  pushOn: boolean;
 }
 
 function parseArgs(argv: string[]): Options {
@@ -53,6 +54,7 @@ function parseArgs(argv: string[]): Options {
     airMode: (get('air') as Options['airMode']) ?? 'shared',
     personalDeckSize: Number(get('supply') ?? 12),
     lossPerRecovery: Number(get('loss') ?? 2),
+    pushOn: get('push') === 'true',
   };
 }
 
@@ -80,6 +82,7 @@ interface Totals {
   aborted: number;
   reshuffles: number[];
   burnt: number;
+  pushes: number;
   ranDry: number;
   gamesWithDryPlayer: number;
 }
@@ -113,6 +116,7 @@ function playOne(seed: number, options: Options, bots: Policy[], totals: Totals)
     airMode: options.airMode,
     personalDeckSize: options.personalDeckSize,
     lossPerRecovery: options.lossPerRecovery,
+    pushOn: options.pushOn,
   });
   let capped = false;
 
@@ -145,6 +149,7 @@ function playOne(seed: number, options: Options, bots: Policy[], totals: Totals)
   totals.ridesTaken += state.stats.ridesTaken.reduce((a, b) => a + b, 0);
   totals.aborted += state.stats.aborted.reduce((a, b) => a + b, 0);
   totals.burnt += state.stats.burnt.reduce((a, b) => a + b, 0);
+  totals.pushes += state.stats.pushes.reduce((a, b) => a + b, 0);
   totals.ranDry += state.players.filter((p) => p.outOfAir).length;
   if (state.players.some((p) => p.outOfAir)) totals.gamesWithDryPlayer += 1;
   totals.reshuffles.push(state.reshuffles);
@@ -197,6 +202,7 @@ function main(): void {
     aborted: 0,
     reshuffles: [],
     burnt: 0,
+    pushes: 0,
     ranDry: 0,
     gamesWithDryPlayer: 0,
   };
@@ -216,6 +222,7 @@ function main(): void {
   console.log(
     `  trenches=${options.trenchCount} divers=${options.diversPerPlayer} ` +
       `air=${options.airMode}${options.airMode === 'personal' ? ` supply=${options.personalDeckSize} loss=${options.lossPerRecovery}` : ''} ` +
+      `${options.pushOn ? 'push=on ' : ''}` +
       `hand=${options.handSize} ` +
       `maxRiders=${options.maxRiders ?? '∞'}`,
   );
@@ -244,6 +251,10 @@ function main(): void {
   console.log(`    empty-handed hauls  ${totals.emptyHauls}`);
   console.log(`    aborted dives       ${(totals.aborted / totals.games).toFixed(1)} per game  (${pct(totals.aborted, totals.totalDivers)} of divers)`);
   console.log(`    deck reshuffles     ${mean(totals.reshuffles).toFixed(1)} per game  (air limit ${state0.config.airLimit})`);
+  if (options.pushOn) {
+    console.log(`    pushed on           ${(totals.pushes / totals.games / options.players).toFixed(1)} per player` +
+      `  (${pct(totals.pushes, totals.paidDescents)} of descents forced by overpaying)`);
+  }
   if (options.airMode === 'personal') {
     console.log(`    cards burnt         ${(totals.burnt / totals.games / options.players).toFixed(1)} per player`);
     console.log(`    ran out of air      ${pct(totals.ranDry, totals.games * options.players)} of seats` +

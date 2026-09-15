@@ -5,6 +5,8 @@ import { PLAYER_CSS } from '../render/palette.js';
 export interface PayOption {
   label: string;
   cardIndices: number[];
+  /** Marks a payment that burns its cards rather than discarding them. */
+  danger?: boolean;
   onPick(): void;
 }
 
@@ -217,7 +219,7 @@ export class Hud {
     this.options.innerHTML = '';
     for (const option of options) {
       const button = document.createElement('button');
-      button.className = 'pay';
+      button.className = `pay${option.danger ? ' burns' : ''}`;
       button.innerHTML = option.label;
       button.addEventListener('click', option.onPick);
       button.addEventListener('pointerenter', () => onHover(option.cardIndices));

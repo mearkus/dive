@@ -176,6 +176,7 @@ export function newGame(
       cardsSpent: players.map(() => 0),
       aborted: players.map(() => 0),
       burnt: players.map(() => 0),
+      pushes: players.map(() => 0),
     },
   };
 }

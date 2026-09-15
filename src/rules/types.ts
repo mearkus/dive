@@ -54,6 +54,7 @@ export type Action =
 
 export type GameEvent =
   | { t: 'cards-spent'; player: number; values: number[] }
+  | { t: 'pushed-on'; player: number; values: number[]; cost: number }
   | { t: 'hand-discarded'; player: number; values: number[] }
   | { t: 'hand-refilled'; player: number; drawn: number[] }
   | { t: 'deck-reshuffled'; size: number }
@@ -109,6 +110,13 @@ export interface RulesConfig {
   personalDeckSize: number;
   /** Cards burnt for good each time a player surfaces for air. */
   lossPerRecovery: number;
+  /**
+   * Allow paying MORE than a ledge's number to force a descent. Everything
+   * spent on such a push is burnt for good rather than discarded, so exact
+   * payment stays the efficient line and a turn you cannot pay for becomes a
+   * costly choice instead of a dead one.
+   */
+  pushOn: boolean;
 }
 
 export const DEFAULT_CONFIG: RulesConfig = {
@@ -122,6 +130,7 @@ export const DEFAULT_CONFIG: RulesConfig = {
   airMode: 'shared',
   personalDeckSize: 12,
   lossPerRecovery: 2,
+  pushOn: false,
 };
 
 /** Counters for playtest instrumentation; not part of the rules. */
@@ -135,6 +144,8 @@ export interface GameStats {
   aborted: number[];
   /** Cards burnt for good, per player, in 'personal' mode. */
   burnt: number[];
+  /** Descents forced by overpaying. */
+  pushes: number[];
 }
 
 export interface GameState {
