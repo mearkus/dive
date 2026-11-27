@@ -1,4 +1,4 @@
-import { isForcedRefresh, movingGroup } from './legal.js';
+import { combosFor, isForcedRefresh, movingGroup } from './legal.js';
 import { mulberry32, shuffle } from './rng.js';
 import type { Action, GameEvent, GameState, Player, Trench } from './types.js';
 
@@ -153,6 +153,8 @@ function applyDescend(state: GameState, action: Action & { kind: 'descend' }, ev
     // Only a minimal overpay: a push may not burn a card it did not need to.
     const wasteful = indices.some((i) => sum - player.hand[i] >= cost);
     if (wasteful) illegal('a push may not spend more cards than it needs');
+    // Pushing is only for a ledge the hand cannot pay exactly.
+    if (combosFor(player.hand, cost).length > 0) illegal(`your hand can pay ${cost} exactly, so you may not push`);
   }
 
   const spent = indices.map((i) => player.hand[i]);
