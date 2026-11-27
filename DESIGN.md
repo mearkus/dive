@@ -923,12 +923,19 @@ Proposed after playing the personal-supply variant: being forced to spend a
 turn recovering when nothing is payable is the least interesting thing that
 can happen on your go.
 
-Implemented as **push on** — a title-screen option in either air mode. When
+Implemented as **push on** — a title-screen option in either air mode, on by
+default since the Nov 26 playtest (a player who switches it off keeps it
+off). When
 no combination pays a ledge exactly you may overpay to force it, and
 everything spent on a push is **burnt for good** rather than discarded. A push
 must be minimal: it may never spend a card it did not need. Exact payment
 therefore stays the efficient line, and the ledge numbers keep their meaning,
 which a flat toll would have thrown away.
+
+A push is offered, and accepted by the reducer, only for a ledge the hand
+cannot pay exactly. Until the Nov 26 playtest the move list also offered
+pushes beside exact payments; the bots never took them, so the numbers below
+stand.
 
 Measured at 250-400 games per setting:
 

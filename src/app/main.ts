@@ -106,7 +106,9 @@ personalAir.addEventListener('change', () => {
 const pushToggle = element<HTMLInputElement>('pushOn');
 try {
   const fromUrl = new URLSearchParams(location.search).get('push');
-  pushToggle.checked = fromUrl ? fromUrl === 'on' : localStorage.getItem('sunkenhold.push') === 'on';
+  // On unless this player has switched it off: dead turns read as a skipped
+  // turn, and pushing cuts them from about 9% of turns to about 3%.
+  pushToggle.checked = fromUrl ? fromUrl !== 'off' : localStorage.getItem('sunkenhold.push') !== 'off';
 } catch {
   /* storage blocked; the default stands */
 }
@@ -123,42 +125,7 @@ pushToggle.addEventListener('change', () => {
 syncMuteButton();
 element('mute').addEventListener('click', () => {
   sfx.setMuted(!sfx.isMuted);
-  // Preselect from the URL, remember the choice, and keep the rules card in step.
-const personalAir = element<HTMLInputElement>('personalAir');
-try {
-  const fromUrl = new URLSearchParams(location.search).get('air');
-  personalAir.checked = fromUrl ? fromUrl === 'personal' : localStorage.getItem('sunkenhold.air') === 'personal';
-} catch {
-  /* storage blocked; the default stands */
-}
-document.body.classList.toggle('personal-air', personalAir.checked);
-personalAir.addEventListener('change', () => {
-  document.body.classList.toggle('personal-air', personalAir.checked);
-  try {
-    localStorage.setItem('sunkenhold.air', personalAir.checked ? 'personal' : 'shared');
-  } catch {
-    /* not fatal */
-  }
-});
-
-const pushToggle = element<HTMLInputElement>('pushOn');
-try {
-  const fromUrl = new URLSearchParams(location.search).get('push');
-  pushToggle.checked = fromUrl ? fromUrl === 'on' : localStorage.getItem('sunkenhold.push') === 'on';
-} catch {
-  /* storage blocked; the default stands */
-}
-document.body.classList.toggle('push-on', pushToggle.checked);
-pushToggle.addEventListener('change', () => {
-  document.body.classList.toggle('push-on', pushToggle.checked);
-  try {
-    localStorage.setItem('sunkenhold.push', pushToggle.checked ? 'on' : 'off');
-  } catch {
-    /* not fatal */
-  }
-});
-
-syncMuteButton();
+  syncMuteButton();
 });
 
 const rules = element('rules');

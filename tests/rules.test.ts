@@ -502,13 +502,45 @@ describe('pushing on', () => {
   });
 
   it('offers pushes only where no exact payment exists', () => {
-    const state = newGame(107, 2, { pushOn: true, trenchCount: 5 });
+    // Seed 11 deals 2, 2, 4, 4, 5 with ledges costing 2 open: "pay 2" is
+    // there, so burning a 4 or a 5 must not be.
+    const state = newGame(11, 2, { pushOn: true });
+    const hand = state.players[state.current].hand;
+    let checked = 0;
     for (const descend of legalDescends(state)) {
+      if (descend.combos.length > 0) {
+        expect(descend.pushCombos).toEqual([]);
+        checked += 1;
+      }
       for (const combo of descend.pushCombos) {
-        const total = combo.reduce((sum, i) => sum + state.players[state.current].hand[i], 0);
+        const total = combo.reduce((sum, i) => sum + hand[i], 0);
         expect(total).toBeGreaterThan(descend.cost);
       }
     }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it('still offers a push when nothing pays exactly', () => {
+    let state = newGame(107, 2, { pushOn: true, trenchCount: 5 });
+    state = setHand(state, state.current, [6, 6, 6, 6, 6]);
+    for (const trench of state.trenches) trench.costs[0] = 2;
+    const descends = legalDescends(state);
+    expect(descends.length).toBeGreaterThan(0);
+    for (const descend of descends) {
+      expect(descend.combos).toEqual([]);
+      expect(descend.pushCombos).toEqual([[0]]);
+    }
+  });
+
+  it('refuses a push when the hand can pay exactly', () => {
+    let state = newGame(111, 2, { pushOn: true, trenchCount: 5 });
+    const mover = `${'AB'[state.current]}1`;
+    const cost = state.trenches[0].costs[0];
+    state = setHand(state, state.current, [cost, cost + 2, 6, 6, 6]);
+    expect(() => apply(state, { kind: 'descend', diver: mover, cards: [1], trench: 0 })).toThrow(
+      IllegalMoveError,
+    );
+    expect(() => apply(state, { kind: 'descend', diver: mover, cards: [0], trench: 0 })).not.toThrow();
   });
 
   it('turns an unplayable hand into a playable one', () => {

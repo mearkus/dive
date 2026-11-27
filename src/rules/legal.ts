@@ -11,7 +11,10 @@ export interface LegalDescend {
   cost: number;
   /** Distinct exact payments, as indices into the mover's hand. */
   combos: number[][];
-  /** Minimal overpayments, when pushing on is allowed. Everything spent burns. */
+  /**
+   * Minimal overpayments, when pushing on is allowed and nothing in hand pays
+   * the ledge exactly (DESIGN.md §11o). Everything spent burns.
+   */
   pushCombos: number[][];
   /** Divers dragged along for free, bottom first. Empty when entering from the surface. */
   riders: string[];
@@ -87,6 +90,16 @@ export function overpaysFor(hand: number[], target: number): number[][] {
   return out;
 }
 
+/**
+ * Exact payments, plus pushes only when there is no exact payment: a push is
+ * the way out of a dead hand, not a second way to pay a ledge you can afford.
+ */
+export function payments(state: GameState, hand: number[], cost: number): { combos: number[][]; pushCombos: number[][] } {
+  const combos = combosFor(hand, cost);
+  const pushCombos = state.config.pushOn && combos.length === 0 ? overpaysFor(hand, cost) : [];
+  return { combos, pushCombos };
+}
+
 /** The group that moves when `diver` descends: the diver plus the riders above it. */
 export function movingGroup(state: GameState, trench: Trench, ledge: number, diver: string): string[] {
   const stack = trench.stacks[ledge - 1];
@@ -117,8 +130,7 @@ function candidateDescends(state: GameState): LegalDescend[] {
           from: diver.pos,
           toLedge: 1,
           cost,
-          combos: combosFor(player.hand, cost),
-          pushCombos: state.config.pushOn ? overpaysFor(player.hand, cost) : [],
+          ...payments(state, player.hand, cost),
           riders: [],
           reachesWreck: trench.depth === 1,
         });
@@ -135,8 +147,7 @@ function candidateDescends(state: GameState): LegalDescend[] {
         from: diver.pos,
         toLedge,
         cost,
-        combos: combosFor(player.hand, cost),
-        pushCombos: state.config.pushOn ? overpaysFor(player.hand, cost) : [],
+        ...payments(state, player.hand, cost),
         riders: movingGroup(state, trench, diver.pos.ledge, diver.id).slice(1),
         reachesWreck: toLedge === trench.depth,
       });
