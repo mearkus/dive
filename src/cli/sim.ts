@@ -99,9 +99,10 @@ function pct(n: number, d: number): string {
 function seatPolicies(options: Options, game: number): Policy[] {
   return Array.from({ length: options.players }, (_, seat) => {
     const name = options.bots[(seat + game) % options.bots.length];
-    return name === 'search'
-      ? search({ samples: 5, horizon: 8, seed: 1000 + seat })
-      : greedy({ noise: 0.15, seed: 1000 + seat });
+    if (name === 'search') return search({ samples: 8, horizon: 8, seed: 1000 + seat });
+    // 'blind' is the score-blind greedy bot from before the Nov 26 playtest.
+    if (name === 'blind') return greedy({ noise: 0.15, seed: 1000 + seat, scoreAware: 0 });
+    return greedy({ noise: 0.15, seed: 1000 + seat });
   });
 }
 

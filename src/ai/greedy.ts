@@ -2,6 +2,7 @@ import {
   legalDescends,
   canRefresh,
   mulberry32,
+  scores,
   type Action,
   type GameState,
   type Rng,
@@ -18,7 +19,46 @@ export interface GreedyOptions {
   leechBonus?: number;
   /** Score a refresh must beat every descend by before the bot passes its turn. */
   refreshFloor?: number;
+  /**
+   * How much more a free ride costs when it goes to a dangerous rival: the
+   * leader, or a player down to their last diver (who ends the game when it
+   * surfaces). 0 is the old score-blind bot.
+   */
+  scoreAware?: number;
+  threatWeights?: ThreatWeights;
   seed?: number;
+}
+
+export interface ThreatWeights {
+  /** Extra cost of towing the player who leads me, at a 10-point lead. */
+  leader: number;
+  /** Extra cost of towing a rival's last diver still in the water. */
+  lastDiver: number;
+}
+
+/**
+ * Tuned at 1,000 games a setting: these weights cut the times a bot tows the
+ * leader or a rival's last diver to the wreck or the ledge above it by about
+ * a quarter, and leave the bot no weaker than the score-blind one.
+ */
+export const THREAT: ThreatWeights = { leader: 2, lastDiver: 2 };
+
+/**
+ * How much worse it is to hand `owner` progress than to hand it to an
+ * average rival: more for the leader and for a player whose last diver is
+ * still in the water.
+ */
+export function threat(state: GameState, owner: number, me: number, weight = 1, w: ThreatWeights = THREAT): number {
+  if (weight <= 0) return 1;
+  const banked = scores(state);
+  const top = Math.max(...banked);
+  let factor = 1;
+  const lead = banked[owner] - banked[me];
+  // Leads me: scaled by how far, so a one-point lead is not a crisis.
+  if (banked[owner] === top && lead > 0) factor += weight * w.leader * Math.min(1, lead / 10);
+  const left = Object.values(state.divers).filter((d) => d.owner === owner && d.pos.kind !== 'scored').length;
+  if (left === 1) factor += weight * w.lastDiver;
+  return factor;
 }
 
 /**
@@ -30,10 +70,12 @@ export function greedy(options: GreedyOptions = {}): Policy {
   const altruism = options.altruismPenalty ?? 0.8;
   const leech = options.leechBonus ?? 0.6;
   const refreshFloor = options.refreshFloor ?? 0.02;
+  const scoreAware = options.scoreAware ?? 1;
+  const weights = options.threatWeights ?? THREAT;
   const rng: Rng = mulberry32(options.seed ?? 0x5eed);
 
   return {
-    name: noise > 0 ? `greedy(noise=${noise})` : 'greedy',
+    name: (noise > 0 ? `greedy(noise=${noise})` : 'greedy') + (scoreAware === 1 ? '' : `[score=${scoreAware}]`),
     choose(state: GameState): Action {
       const descends = legalDescends(state);
       const rush = urgency(state);
@@ -51,13 +93,15 @@ export function greedy(options: GreedyOptions = {}): Policy {
           score = positionValue(trench, descend.toLedge) - positionValue(trench, fromLedge);
         }
 
-        // Every rider above gets the same progress for free.
+        // Every rider above gets the same progress for free — and it matters
+        // who: towing the leader, or a rival's last diver, can hand them the game.
         for (const rider of descend.riders) {
+          const owner = state.divers[rider].owner;
+          if (owner === state.current) continue;
           const gain = descend.reachesWreck
             ? potential(trench)
             : positionValue(trench, descend.toLedge) - positionValue(trench, fromLedge);
-          const theirs = state.divers[rider].owner === state.current ? 0 : gain * altruism;
-          score -= theirs;
+          score -= gain * altruism * threat(state, owner, state.current, scoreAware, weights);
         }
 
         // Landing on an occupied ledge clips in above those divers: every

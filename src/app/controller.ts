@@ -50,7 +50,7 @@ export class Controller {
     this.coach = coach ?? new Coach(false);
     this.bots = Array.from({ length: options.players }, (_, i) =>
       options.difficulty === 'search'
-        ? search({ samples: 5, horizon: 8, seed: 700 + i })
+        ? search({ samples: 8, horizon: 8, seed: 700 + i })
         : greedy({ noise: 0.18, seed: 700 + i }),
     );
 

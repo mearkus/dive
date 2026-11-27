@@ -17,6 +17,8 @@ export interface SearchOptions {
   samples?: number;
   /** Turns to play out before evaluating. */
   horizon?: number;
+  /** Jitter on the greedy bots that play each sample out. */
+  rolloutNoise?: number;
   seed?: number;
 }
 
@@ -69,10 +71,10 @@ export function evaluate(state: GameState, forPlayer: number): number {
  * Runs over the same pure reducer as the real game — see DESIGN.md §6.1.
  */
 export function search(options: SearchOptions = {}): Policy {
-  const samples = options.samples ?? 6;
+  const samples = options.samples ?? 8;
   const horizon = options.horizon ?? 8;
   const rng: Rng = mulberry32(options.seed ?? 0xc0ffee);
-  const rollout = greedy({ noise: 0.35, seed: (options.seed ?? 0xc0ffee) ^ 0x9e37 });
+  const rollout = greedy({ noise: options.rolloutNoise ?? 0.25, seed: (options.seed ?? 0xc0ffee) ^ 0x9e37 });
 
   return {
     name: `search(s=${samples},h=${horizon})`,
