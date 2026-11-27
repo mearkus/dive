@@ -95,7 +95,7 @@ async function main(): Promise<void> {
     i < options.humans ? `You ${String.fromCharCode(65 + i)}` : `Bot ${String.fromCharCode(65 + i)}`,
   );
   let state = newGame(options.seed, options.players, { maxRiders: options.maxRiders }, names);
-  const bot = options.bot === 'search' ? search({ samples: 6, horizon: 8 }) : greedy({ noise: 0.15 });
+  const bot = options.bot === 'search' ? search({ samples: 8, horizon: 8 }) : greedy({ noise: 0.15 });
 
   const rl = readline.createInterface({ input: stdin, output: stdout });
   console.log(`\nSUNKEN HOLD — seed ${options.seed}, ${options.players} players, bot: ${bot.name}`);

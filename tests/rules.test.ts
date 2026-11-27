@@ -14,7 +14,7 @@ import {
   type GameState,
 } from '../src/rules/index.js';
 import { mulberry32 } from '../src/rules/rng.js';
-import { greedy } from '../src/ai/index.js';
+import { greedy, threat } from '../src/ai/index.js';
 
 /** Force a known hand so tests can aim at an exact cost. */
 function setHand(state: GameState, player: number, hand: number[]): GameState {
@@ -554,5 +554,47 @@ describe('pushing on', () => {
     pushy = setHand(pushy, pushy.current, stuckHand);
     for (const trench of pushy.trenches) trench.costs[0] = 1;
     expect(legalDescends(pushy).length).toBeGreaterThan(0);
+  });
+});
+
+describe('score-aware bots', () => {
+  /** Rival B down to its last diver, clipped on top of A1 two ledges above a wreck. */
+  function lastDiverOnTop(): GameState {
+    const state = structuredClone(newGame(0, 3, { trenchCount: 4 }));
+    state.current = 0;
+    const trench = state.trenches[0];
+    const ledge = trench.depth - 2;
+    for (const diver of Object.values(state.divers)) {
+      if (diver.owner === 1 && diver.id !== 'B1') diver.pos = { kind: 'scored' };
+    }
+    for (const id of ['A1', 'B1']) {
+      state.divers[id].pos = { kind: 'ledge', trench: 0, ledge };
+      trench.stacks[ledge - 1].push(id);
+    }
+    // A can pay for A1's next ledge, or send another diver in instead.
+    state.players[0].hand = [trench.costs[ledge], state.trenches[1].costs[0], 6, 6, 6].sort((a, b) => a - b);
+    return state;
+  }
+
+  it('weighs a rival by the danger they pose', () => {
+    const state = lastDiverOnTop();
+    expect(threat(state, 1, 0)).toBeGreaterThan(threat(state, 2, 0));
+    expect(threat(state, 2, 0)).toBe(1);
+    expect(threat(state, 1, 0, 0)).toBe(1);
+
+    state.players[2].tokens = [8];
+    expect(threat(state, 2, 0)).toBeGreaterThan(1);
+    // Leading someone else, not me, is no extra threat to me.
+    state.players[0].tokens = [9];
+    expect(threat(state, 2, 0)).toBe(1);
+  });
+
+  it('will not tow a rival\'s last diver to the brink when it has another move', () => {
+    const state = lastDiverOnTop();
+    const aware = greedy({ noise: 0 }).choose(state);
+    const blind = greedy({ noise: 0, scoreAware: 0 }).choose(state);
+    expect(blind).toMatchObject({ kind: 'descend', diver: 'A1' });
+    expect(aware.kind).toBe('descend');
+    expect(aware).not.toMatchObject({ diver: 'A1' });
   });
 });
