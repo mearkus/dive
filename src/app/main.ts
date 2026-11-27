@@ -28,6 +28,14 @@ function syncMuteButton(): void {
   button.setAttribute('aria-pressed', String(!sfx.isMuted));
 }
 
+/** Explain, on the intro screen, that this browser cannot draw the 3D board. */
+function showNo3d(): void {
+  element('no3d').hidden = false;
+  const button = element<HTMLButtonElement>('begin');
+  button.disabled = true;
+  button.textContent = '3D not available';
+}
+
 function begin(): void {
   const canvas = element<HTMLCanvasElement>('stage');
   const players = Number(element<HTMLSelectElement>('playerCount').value);
@@ -50,8 +58,19 @@ function begin(): void {
   const quality = detectQuality();
   const maxDepth = Math.max(...state.trenches.map((t) => t.depth));
 
-  const stage = createStage(canvas, state.trenches.length, maxDepth, quality);
-  const scene = new GameScene(stage, state, quality);
+  // A browser without WebGL (hardware acceleration off, a locked-down school or
+  // work machine, an old graphics card) throws here. Uncaught, it left the
+  // intro up with a dead Dive button, so say what happened instead.
+  let stage: ReturnType<typeof createStage>;
+  let scene: GameScene;
+  try {
+    stage = createStage(canvas, state.trenches.length, maxDepth, quality);
+    scene = new GameScene(stage, state, quality);
+  } catch (error) {
+    console.error('Sunken Hold could not start 3D', error);
+    showNo3d();
+    return;
+  }
   const hud = new Hud();
   const tips = element<HTMLInputElement>('tips').checked;
   const controller = new Controller(
