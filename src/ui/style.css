@@ -352,6 +352,14 @@ html, body {
   font-size: 12px; line-height: 1.45; color: var(--dim);
 }
 .panel label.check.stacked b { color: var(--ink); font-weight: 600; }
+.panel .no3d {
+  margin: 0 0 14px; padding: 10px 12px;
+  font-size: 13.5px; line-height: 1.5; color: var(--ink);
+  border: 1px solid var(--bad); border-radius: 10px;
+  background: rgba(120, 30, 30, 0.25);
+}
+.panel .no3d[hidden] { display: none; }
+#begin:disabled { opacity: .55; cursor: not-allowed; }
 
 /* Only the rules for the mode being played. */
 .when-personal, .when-push { display: none; }
